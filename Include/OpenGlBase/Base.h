@@ -1,7 +1,7 @@
 #pragma once
 namespace Base
 {
-    void Init();
+    bool Init();
     void Destroy();
 };
 

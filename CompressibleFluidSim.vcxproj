@@ -144,6 +144,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Fluid\Render\Gui\Gui.cpp" />
+    <ClCompile Include="Include\ImGui\Helpers.cpp" />
     <ClCompile Include="Include\glm\detail\glm.cpp" />
     <ClCompile Include="Include\glm\glm.cppm" />
     <ClCompile Include="Include\ImGui\imgui.cpp" />
@@ -162,9 +163,11 @@
     <ClCompile Include="Include\OpenGlBase\Window\Window.cpp" />
     <ClCompile Include="Fluid\Render\Render.cpp" />
     <ClCompile Include="Fluid\Sim\Sim.cpp" />
+    <ClCompile Include="Include\OpenGlBase\Window\MonitorHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Render\Gui\Gui.h" />
+    <ClInclude Include="Include\ImGui\Helpers.h" />
     <ClInclude Include="Include\glad\glad.h" />
     <ClInclude Include="Include\GLFW\glfw3.h" />
     <ClInclude Include="Include\GLFW\glfw3native.h" />
@@ -460,7 +463,11 @@
     <ClInclude Include="Include\ImGui\imgui.h" />
     <ClInclude Include="Include\ImGui\imgui_impl_glfw.h" />
     <ClInclude Include="Include\ImGui\imgui_impl_opengl3.h" />
+    <ClInclude Include="Include\ImGui\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="Include\ImGui\imgui_internal.h" />
+    <ClInclude Include="Include\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="Include\ImGui\imstb_textedit.h" />
+    <ClInclude Include="Include\ImGui\imstb_truetype.h" />
     <ClInclude Include="Include\KHR\khrplatform.h" />
     <ClInclude Include="Include\OpenGlBase\Input\Input.h" />
     <ClInclude Include="Include\OpenGlBase\Base.h" />
@@ -469,6 +476,7 @@
     <ClInclude Include="Include\OpenGlBase\Window\Window.h" />
     <ClInclude Include="Fluid\Render\Render.h" />
     <ClInclude Include="Fluid\Sim\Sim.h" />
+    <ClInclude Include="Include\OpenGlBase\Window\MonitorHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Include\glm\detail\func_common.inl" />

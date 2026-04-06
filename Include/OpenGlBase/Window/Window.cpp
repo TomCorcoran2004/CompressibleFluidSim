@@ -1,30 +1,27 @@
 #include "Window.h"
+#include <cassert>
 #include <glfw/glfw3.h>
 #include <glad/glad.h>
+#include <ImGui/imgui.h>
+#include <ImGui/Helpers.h>
 
 #include "../Debug/Log.h"
+#include "MonitorHelper.h"
 
 namespace Base
 {    
     namespace Window
     {
-        void SetWindowHints(const Config& Config);
+        GLFWwindow* Handle = nullptr;
 
-        void SetPositionInternal(const ivec2& NewPosition);
-        void SetSizeInternal(const ivec2& NewSize);
-        void SetFrameBufferSizeInternal(const ivec2& NewFrameBufferSize);
+        ivec2 WindowedPosition = {  };
+        ivec2 FullScreenPosition = {  };
+        bool FullScreen = false;
 
-        static void PositionCallBack(GLFWwindow* WindowInstance, int X, int Y);
-        static void SizeCallBack(GLFWwindow* WindowInstance, int Width, int Height);
-        static void FrameBufferSizeCallBack(GLFWwindow* WindowInstance, int Width, int Height);
-        
-        GLFWwindow* WindowInstance = nullptr;
-        GLFWmonitor* Monitor = nullptr;
         bool PendingClose = false;
 
         ivec2 FrameBufferSize = { 0, 0 };
         ivec2 Size = { 0, 0 };
-        ivec2 Position = { 0, 0 };
 
         f64 DeltaTime = 0.0;
         f64 LastFrameTime = 0.0;
@@ -32,155 +29,35 @@ namespace Base
         ivec2 LastWindowedSize = { 0, 0 };
         ivec2 LastWindowedPosition = { 0, 0 };
 
-        bool Init(const Config& Config)
+        static void PositionCallBack(GLFWwindow* WindowInstance, int x, int y)
         {
-            assert(Config.Title);
-
-            Monitor = Config.Monitor ? Config.Monitor : glfwGetPrimaryMonitor();
-            SetWindowHints(Config);
-
-            WindowInstance = glfwCreateWindow(Config.Size.x, Config.Size.y, Config.Title, Config.Monitor, nullptr);
-
-            if (WindowInstance == nullptr)
+            if (glfwGetWindowMonitor(WindowInstance) == nullptr)
             {
-                Log::Error("GLFWWindow* WindowInstance == nullptr");
-                assert(WindowInstance);
-                return false;
-            }
-
-            glfwMakeContextCurrent(WindowInstance);
-            bool GladInitSuccess = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-            if (GladInitSuccess == false)
-            {
-                Log::Error("GladInitSuccess == false");
-                assert(GladInitSuccess);
-                return false;
-            }
-
-            glfwSetFramebufferSizeCallback(WindowInstance, FrameBufferSizeCallBack);
-            glfwSetWindowSizeCallback(WindowInstance, SizeCallBack);
-            glfwSetWindowPosCallback(WindowInstance, PositionCallBack);
-
-            //Initializing All Values To Avoid Leaving Them Un-Initialised Until First CallBacks
-            glfwGetFramebufferSize(WindowInstance, &FrameBufferSize.x, &FrameBufferSize.y);
-            glfwGetWindowSize(WindowInstance, &Size.x, &Size.y);
-            glfwGetWindowPos(WindowInstance, &Position.x, &Position.y);
-
-            glfwSwapInterval(0); //disable vsync
-
-            glViewport(0, 0, Config.Size.x, Config.Size.y);
-        }
-
-        void Destroy()
-        {
-            assert(WindowInstance);
-            glfwDestroyWindow(WindowInstance);
-        }
-
-        bool ShouldClose()
-        {
-            assert(WindowInstance);
-            return glfwWindowShouldClose(WindowInstance);
-        }
-
-        void Tick()
-        {
-            assert(WindowInstance);
-
-            if (PendingClose) glfwSetWindowShouldClose(WindowInstance, true);
-
-            f64 CurrentTime = glfwGetTime();
-            DeltaTime = CurrentTime - LastFrameTime;
-            LastFrameTime = CurrentTime;
-
-            glfwPollEvents();
-            glfwSwapBuffers(WindowInstance);
-        }
-
-        ivec2 GetWindowPos()
-        {
-            return Position;
-        }
-
-        ivec2 GetWindowSize()
-        {
-            return Size;
-        }
-
-        ivec2 GetFrameBufferSize()
-        {
-            return FrameBufferSize;
-        }
-
-        GLFWwindow* GetGLFWWindow()
-        {
-            return WindowInstance;
-        }
-
-        GLFWmonitor* GetPrimaryMonitor()
-        {
-            return Monitor;
-        }
-
-        f64 GetDeltaTime()
-        {
-            return DeltaTime;
-        }
-
-        void Close()
-        {
-            PendingClose = true;
-        }
-
-        void SetWindowPos(const ivec2& NewPosition)
-        {
-            assert(WindowInstance);
-
-            glfwSetWindowPos(WindowInstance, Position.x, Position.y);
-        }
-
-        void SetWindowSize(const ivec2& Size)
-        {
-            assert(WindowInstance);
-
-            glfwSetWindowSize(WindowInstance, Size.x, Size.y);
-        }
-
-        void ToggleFullscreen()
-        {
-            assert(WindowInstance);
-            assert(Monitor);
-
-            if (IsFullScreen())
-            {
-                glfwSetWindowMonitor(WindowInstance, nullptr, LastWindowedPosition.x, LastWindowedPosition.y, LastWindowedSize.x, LastWindowedSize.y, 0);
+                WindowedPosition = ivec2(x, y);
             }
             else
             {
-                LastWindowedPosition = GetWindowPos();
-                LastWindowedSize = GetWindowSize();
-
-                const GLFWvidmode* VideoMode = glfwGetVideoMode(Monitor);
-
-                glfwSetWindowMonitor(WindowInstance, Monitor, 0, 0, VideoMode->width, VideoMode->height, VideoMode->refreshRate);
+                FullScreenPosition = ivec2(x, y);
             }
         }
 
-        void Minimize()
+        static void SizeCallBack(GLFWwindow* WindowInstance, int Width, int Height)
         {
-            assert(WindowInstance);
-            glfwIconifyWindow(WindowInstance);
+            Size = ivec2(Width, Height);
         }
 
-        bool IsFullScreen()
+        static void FrameBufferSizeCallBack(GLFWwindow* WindowInstance, int Width, int Height)
         {
-            assert(WindowInstance);
-
-            return glfwGetWindowMonitor(WindowInstance);
+            glViewport(0, 0, Width, Height);
+            FrameBufferSize = ivec2(Width, Height);
         }
 
-        void SetWindowHints(const Config& Config)
-        {
+        bool Init(const Config& Config)
+        {            
+            //setup initual Monitor
+            MonitorHelper::Init();
+
+            //Set Window Hints
             glfwDefaultWindowHints();
 
             glfwWindowHint(GLFW_RESIZABLE, Config.Resizeable);
@@ -188,36 +65,114 @@ namespace Base
             glfwWindowHint(GLFW_DECORATED, Config.HaveDecorations);
             glfwWindowHint(GLFW_FOCUSED, Config.InituiallyFocused);
             glfwWindowHint(GLFW_CENTER_CURSOR, Config.CenterCursorOnStartup);
+
+            //Creating a window
+            FullScreen = Config.FullScreen;
+            GLFWmonitor* Monitor = FullScreen ? MonitorHelper::GetCurrentMonitor().GetHandle() : nullptr;
+            Handle = glfwCreateWindow(Config.Size.x, Config.Size.y, Config.Title, Monitor, nullptr);
+            if (Handle == nullptr)
+            {
+                Log::Error("GLFWWindow* WindowInstance == nullptr");
+                return false;
+            }
+
+            glfwMakeContextCurrent(Handle);
+
+            bool GladInitSuccess = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+            if (GladInitSuccess == false)
+            {
+                Log::Error("GladInitSuccess == false");
+                return false;
+            }
+
+            //Setting Up Callbacks for info about window
+            glfwSetFramebufferSizeCallback(Handle, FrameBufferSizeCallBack);
+            glfwSetWindowSizeCallback(Handle, SizeCallBack);
+            glfwSetWindowPosCallback(Handle, PositionCallBack);
+
+            //Initializing All Values To Avoid Leaving Them Un-Initialised Until First CallBacks
+            glfwGetFramebufferSize(Handle, &FrameBufferSize.x, &FrameBufferSize.y);
+            glfwGetWindowSize(Handle, &Size.x, &Size.y);
+            
+            if (FullScreen) glfwGetWindowPos(Handle, &FullScreenPosition.x, &FullScreenPosition.y);
+            if (FullScreen == false) glfwGetWindowPos(Handle, &WindowedPosition.x, &WindowedPosition.y);
+
+            //need to sort vsync handling
+            glfwSwapInterval(0); //disable vsync
+
+            glViewport(0, 0, Config.Size.x, Config.Size.y);
+
+            return true;
         }
 
-        void SetSizeInternal(const ivec2& NewSize)
+        void Destroy()
         {
-            Size = NewSize;
-        }
-        void SetPositionInternal(const ivec2& NewPosition)
-        {
-            Position = NewPosition;
-        }
-        void SetFrameBufferSizeInternal(const ivec2& NewFrameBufferSize)
-        {
-            FrameBufferSize = NewFrameBufferSize;
+            assert(Handle);
+            glfwDestroyWindow(Handle);
         }
 
-        void PositionCallBack(GLFWwindow* WindowInstance, int X, int Y)
+        bool ShouldClose()
         {
-           SetPositionInternal(ivec2{ X, Y });
+            assert(Handle);
+            return glfwWindowShouldClose(Handle);
         }
 
-        void SizeCallBack(GLFWwindow* WindowInstance, int Width, int Height)
+        void Tick()
         {
-            SetSizeInternal(ivec2{ Width, Height });
+            assert(Handle);
+
+            if (PendingClose) glfwSetWindowShouldClose(Handle, true);
+
+            f64 CurrentTime = glfwGetTime();
+            DeltaTime = CurrentTime - LastFrameTime;
+            LastFrameTime = CurrentTime;
+
+            glfwPollEvents();
+            glfwSwapBuffers(Handle);
         }
 
-        void FrameBufferSizeCallBack(GLFWwindow* WindowInstance, int Width, int Height)
-        {
-            glViewport(0, 0, Width, Height);
+        ivec2 GetWindowPos() { return glfwGetWindowMonitor(Handle) ? WindowedPosition : FullScreenPosition; }
+        ivec2 GetWindowSize() { return Size; }
+        ivec2 GetFrameBufferSize() { return FrameBufferSize; }
+        GLFWwindow* GetGLFWWindow() { return Handle; }
+        f64 GetDeltaTime() { return DeltaTime; }
+        
+        void Close() { PendingClose = true; }
 
-            SetFrameBufferSizeInternal(ivec2{ Width, Height });
+        void CollapsingHeader()
+        {
+            std::vector<std::string> MonitorNames = MonitorHelper::GetMonitorNames();
+            i32 CurrentMonitorIndex = MonitorHelper::GetCurrentMonitorIndex();
+
+            if (ImGui::ComboBoxHelper("Monitor", MonitorNames, CurrentMonitorIndex))
+            {
+                MonitorHelper::SetCurrentMonitor(CurrentMonitorIndex);
+            }
+
+            MonitorHelper::Monitor& CurrentMonitor = MonitorHelper::GetCurrentMonitor();
+            std::vector<std::string> VideoModesStr = CurrentMonitor.GetFormattedVideoModes();
+            i32 CurrentVideoMode = CurrentMonitor.GetCurrentVideoModeIndex();
+            bool VideoModeUpdated = false;
+
+            if (ImGui::ComboBoxHelper("Resolutions", VideoModesStr, CurrentVideoMode))
+            {
+                CurrentMonitor.SetVideoMode(CurrentVideoMode);
+                VideoModeUpdated = true;
+            }
+
+            if (ImGui::Checkbox("Fullscreen", &FullScreen) || VideoModeUpdated)
+            {
+                const GLFWvidmode VideoMode = CurrentMonitor.GetCurrentVideoMode();
+                
+                if (FullScreen == true)
+                {
+                    glfwSetWindowMonitor(Handle, CurrentMonitor.GetHandle(), 0, 0, VideoMode.width, VideoMode.height, VideoMode.refreshRate);
+                }
+                else if (FullScreen == false)
+                {
+                    glfwSetWindowMonitor(Handle, nullptr, WindowedPosition.x, WindowedPosition.y, VideoMode.width, VideoMode.height, VideoMode.refreshRate);
+                }
+            }
         }
     }
 }

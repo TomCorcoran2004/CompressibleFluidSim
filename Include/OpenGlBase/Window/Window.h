@@ -1,26 +1,22 @@
 #pragma once
+#include <vector>
 #include <glm/glm.hpp>
 
 struct GLFWwindow;
 struct GLFWmonitor;
+struct GLFWvidmode;
 
 namespace Base
 {    
     namespace Window
     {
-        struct Hint
-        {
-            i32 Hint;
-            i32 Value;
-        };
-
         struct Config
         {
             uvec2 Pos = { 0, 0 };
             uvec2 Size = { 0, 0 };
-            GLFWmonitor* Monitor = nullptr;
 
             //Can All Be Left Default
+            bool FullScreen = false;
             const char* Title = "Default Title";
             bool Resizeable = true;
             bool InitiallyVisible = true;
@@ -39,15 +35,10 @@ namespace Base
         ivec2 GetWindowSize();
         ivec2 GetFrameBufferSize();
         GLFWwindow* GetGLFWWindow();
-        GLFWmonitor* GetPrimaryMonitor();
-        f64 GetDeltaTime();
-
+        
         void Close();
-        void SetWindowPos(const ivec2& NewPosition);
-        void SetWindowSize(const ivec2& Size);
-
-        void ToggleFullscreen();
-        bool IsFullScreen();
-        void Minimize();
+        f64 GetDeltaTime();
+        
+        void CollapsingHeader();
     }
 }

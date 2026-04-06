@@ -5,6 +5,8 @@
 #include <ImGui/imgui_impl_glfw.h>
 #include <ImGui/imgui_impl_opengl3.h>
 
+#include "Gui/Gui.h"
+
 namespace Render
 {
     bool Init()
@@ -19,6 +21,12 @@ namespace Render
         ImGui_ImplGlfw_InitForOpenGL(Base::Window::GetGLFWWindow(), true);
         ImGui_ImplOpenGL3_Init("#version 130");
 
+        if (Gui::Init() == false)
+        {
+            //TODO: Error Handling
+            return false;
+        }
+
         return true;
     }
 
@@ -27,6 +35,8 @@ namespace Render
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+
+        Gui::Tick();
 
         ImGui::Render();
         
@@ -39,6 +49,7 @@ namespace Render
 
     void Destroy()
     {
+        Gui::Destroy();
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplGlfw_Shutdown();
         ImGui::DestroyContext();

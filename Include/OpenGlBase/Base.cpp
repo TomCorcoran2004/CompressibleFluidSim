@@ -1,14 +1,15 @@
 #include "Base.h"
 #include "Debug/Log.h"
-#include <GLFW/glfw3.h>
+#include <glfw/glfw3.h>
 
 namespace Base
 {
-    void Init()
+    bool Init()
     {
         if (glfwInit() == false)
         {
             Log::LastGLFWError();
+            return false;
         }
     }
 
