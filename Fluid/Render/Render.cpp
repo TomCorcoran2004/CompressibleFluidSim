@@ -6,6 +6,7 @@
 #include <ImGui/imgui_impl_opengl3.h>
 
 #include "Gui/Gui.h"
+#include "FluidRender.h"
 
 namespace Render
 {
@@ -37,6 +38,7 @@ namespace Render
         ImGui::NewFrame();
 
         Gui::Tick();
+        FluidRender::Tick();
 
         ImGui::Render();
         

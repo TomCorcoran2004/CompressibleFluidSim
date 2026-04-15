@@ -164,6 +164,7 @@
     <ClCompile Include="Fluid\Render\Render.cpp" />
     <ClCompile Include="Fluid\Sim\Sim.cpp" />
     <ClCompile Include="Include\OpenGlBase\Window\MonitorHelper.cpp" />
+    <ClCompile Include="Fluid\Render\FluidRender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Render\Gui\Gui.h" />
@@ -477,6 +478,7 @@
     <ClInclude Include="Fluid\Render\Render.h" />
     <ClInclude Include="Fluid\Sim\Sim.h" />
     <ClInclude Include="Include\OpenGlBase\Window\MonitorHelper.h" />
+    <ClInclude Include="Fluid\Render\FluidRender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Include\glm\detail\func_common.inl" />
