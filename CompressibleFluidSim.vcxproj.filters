@@ -45,9 +45,6 @@
     <ClCompile Include="Fluid\Render\Render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\Sim\Sim.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Include\ImGui\imgui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -76,6 +73,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Include\ImGui\Helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Fluid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Scenes\SodShock.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ImGui\implot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ImGui\implot_items.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Fluid2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -974,9 +992,6 @@
     <ClInclude Include="Fluid\Render\Render.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\Sim.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ImGui\imconfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1011,6 +1026,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\ImGui\imstb_truetype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\Fluid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\Scenes\SodShock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\implot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ImGui\implot_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\Fluid2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -116,6 +116,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -134,6 +135,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,6 +145,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Fluid\Sim\Fluid2.cpp" />
+    <ClCompile Include="Fluid\Sim\Fluid.cpp" />
     <ClCompile Include="Fluid\Render\Gui\Gui.cpp" />
     <ClCompile Include="Include\ImGui\Helpers.cpp" />
     <ClCompile Include="Include\glm\detail\glm.cpp" />
@@ -154,6 +158,8 @@
     <ClCompile Include="Include\ImGui\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Include\ImGui\imgui_tables.cpp" />
     <ClCompile Include="Include\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Include\ImGui\implot.cpp" />
+    <ClCompile Include="Include\ImGui\implot_items.cpp" />
     <ClCompile Include="Include\OpenGlBase\Input\Input.cpp" />
     <ClCompile Include="Include\OpenGlBase\Base.cpp" />
     <ClCompile Include="Include\glad\glad.c" />
@@ -162,11 +168,14 @@
     <ClCompile Include="Include\OpenGlBase\Shader\ShaderManager.cpp" />
     <ClCompile Include="Include\OpenGlBase\Window\Window.cpp" />
     <ClCompile Include="Fluid\Render\Render.cpp" />
-    <ClCompile Include="Fluid\Sim\Sim.cpp" />
     <ClCompile Include="Include\OpenGlBase\Window\MonitorHelper.cpp" />
-    <ClCompile Include="Fluid\Render\FluidRender.cpp" />
+    <ClCompile Include="Fluid\Sim\Mesh.cpp" />
+    <ClCompile Include="Fluid\Sim\Scene.cpp" />
+    <ClCompile Include="Fluid\Sim\Scenes\SodShock.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Fluid\Sim\Fluid2.h" />
+    <ClInclude Include="Fluid\Sim\Fluid.h" />
     <ClInclude Include="Fluid\Render\Gui\Gui.h" />
     <ClInclude Include="Include\ImGui\Helpers.h" />
     <ClInclude Include="Include\glad\glad.h" />
@@ -466,6 +475,8 @@
     <ClInclude Include="Include\ImGui\imgui_impl_opengl3.h" />
     <ClInclude Include="Include\ImGui\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="Include\ImGui\imgui_internal.h" />
+    <ClInclude Include="Include\ImGui\implot.h" />
+    <ClInclude Include="Include\ImGui\implot_internal.h" />
     <ClInclude Include="Include\ImGui\imstb_rectpack.h" />
     <ClInclude Include="Include\ImGui\imstb_textedit.h" />
     <ClInclude Include="Include\ImGui\imstb_truetype.h" />
@@ -476,9 +487,10 @@
     <ClInclude Include="Include\OpenGlBase\Shader\ShaderManager.h" />
     <ClInclude Include="Include\OpenGlBase\Window\Window.h" />
     <ClInclude Include="Fluid\Render\Render.h" />
-    <ClInclude Include="Fluid\Sim\Sim.h" />
     <ClInclude Include="Include\OpenGlBase\Window\MonitorHelper.h" />
-    <ClInclude Include="Fluid\Render\FluidRender.h" />
+    <ClInclude Include="Fluid\Sim\Mesh.h" />
+    <ClInclude Include="Fluid\Sim\Scene.h" />
+    <ClInclude Include="Fluid\Sim\Scenes\SodShock.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Include\glm\detail\func_common.inl" />

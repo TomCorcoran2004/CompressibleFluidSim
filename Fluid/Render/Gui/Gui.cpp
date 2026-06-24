@@ -6,8 +6,6 @@
 #include <OpenGlBase/Window/Window.h>
 #include <glfw/glfw3.h>
 
-#include "../FluidRender.h"
-
 namespace Gui
 {
     ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_AlwaysAutoResize;
@@ -52,7 +50,7 @@ namespace Gui
             {
                 if (ImGui::CollapsingHeader("Visuals"))
                 {
-                    FluidRender::CollapsingHeader();
+
                 }
                 if (ImGui::CollapsingHeader("Config"))
                 {
