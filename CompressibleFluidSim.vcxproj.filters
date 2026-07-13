@@ -75,16 +75,10 @@
     <ClCompile Include="Include\ImGui\Helpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\Sim\Mesh.cpp">
+    <ClCompile Include="Fluid\Sim\Mesh\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\Sim\Scene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Fluid\Sim\Fluid.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Fluid\Sim\Scenes\SodShock.cpp">
+    <ClCompile Include="Fluid\Sim\Scene\SodShock1D\SodShock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Include\ImGui\implot.cpp">
@@ -93,7 +87,10 @@
     <ClCompile Include="Include\ImGui\implot_items.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\Sim\Fluid2.cpp">
+    <ClCompile Include="Fluid\Sim\Fluid\Fluid.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1028,16 +1025,13 @@
     <ClInclude Include="Include\ImGui\imstb_truetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\Mesh.h">
+    <ClInclude Include="Fluid\Sim\Mesh\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\Scene.h">
+    <ClInclude Include="Fluid\Sim\Scene\Interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\Fluid.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Fluid\Sim\Scenes\SodShock.h">
+    <ClInclude Include="Fluid\Sim\Scene\SodShock1D\SodShock.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\ImGui\implot.h">
@@ -1046,7 +1040,10 @@
     <ClInclude Include="Include\ImGui\implot_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\Fluid2.h">
+    <ClInclude Include="Fluid\Sim\Fluid\Fluid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,10 +4,9 @@
 #include <OpenGLBase/Debug/Log.h>
 
 #include "Fluid/Render/Render.h"
-#include "Fluid/Sim/Mesh.h"
-#include "Fluid/Sim/Fluid.h"
-#include "Fluid/Sim/Scenes/SodShock.h"
-
+#include "Fluid/Sim/Mesh/Mesh.h"
+#include "Fluid/Sim/Fluid/Fluid.h"
+#include "Fluid/Sim/Scene/SodShock1D/SodShock.h"
 
 int main()
 {
@@ -28,8 +27,12 @@ int main()
 
     Render::Init();
     
-    SodShock1D SodShockScene = {  };
-    SodShockScene.Init(1000.f, 0.00001f);
+    SodShock1D::Config SodShockConfig = {
+        .NumCells = 10000,
+        .TotalTicks = 20000
+    };
+
+    SodShock1D SodShockScene = { SodShockConfig };
 
     while (Base::Window::ShouldClose() == false)
     {

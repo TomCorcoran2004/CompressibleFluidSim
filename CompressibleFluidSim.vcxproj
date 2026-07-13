@@ -145,8 +145,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Fluid\Sim\Fluid2.cpp" />
-    <ClCompile Include="Fluid\Sim\Fluid.cpp" />
+    <ClCompile Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.cpp" />
+    <ClCompile Include="Fluid\Sim\Fluid\Fluid.cpp" />
     <ClCompile Include="Fluid\Render\Gui\Gui.cpp" />
     <ClCompile Include="Include\ImGui\Helpers.cpp" />
     <ClCompile Include="Include\glm\detail\glm.cpp" />
@@ -169,13 +169,12 @@
     <ClCompile Include="Include\OpenGlBase\Window\Window.cpp" />
     <ClCompile Include="Fluid\Render\Render.cpp" />
     <ClCompile Include="Include\OpenGlBase\Window\MonitorHelper.cpp" />
-    <ClCompile Include="Fluid\Sim\Mesh.cpp" />
-    <ClCompile Include="Fluid\Sim\Scene.cpp" />
-    <ClCompile Include="Fluid\Sim\Scenes\SodShock.cpp" />
+    <ClCompile Include="Fluid\Sim\Mesh\Mesh.cpp" />
+    <ClCompile Include="Fluid\Sim\Scene\SodShock1D\SodShock.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Fluid\Sim\Fluid2.h" />
-    <ClInclude Include="Fluid\Sim\Fluid.h" />
+    <ClInclude Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.h" />
+    <ClInclude Include="Fluid\Sim\Fluid\Fluid.h" />
     <ClInclude Include="Fluid\Render\Gui\Gui.h" />
     <ClInclude Include="Include\ImGui\Helpers.h" />
     <ClInclude Include="Include\glad\glad.h" />
@@ -488,9 +487,9 @@
     <ClInclude Include="Include\OpenGlBase\Window\Window.h" />
     <ClInclude Include="Fluid\Render\Render.h" />
     <ClInclude Include="Include\OpenGlBase\Window\MonitorHelper.h" />
-    <ClInclude Include="Fluid\Sim\Mesh.h" />
-    <ClInclude Include="Fluid\Sim\Scene.h" />
-    <ClInclude Include="Fluid\Sim\Scenes\SodShock.h" />
+    <ClInclude Include="Fluid\Sim\Mesh\Mesh.h" />
+    <ClInclude Include="Fluid\Sim\Scene\Interface.h" />
+    <ClInclude Include="Fluid\Sim\Scene\SodShock1D\SodShock.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Include\glm\detail\func_common.inl" />
