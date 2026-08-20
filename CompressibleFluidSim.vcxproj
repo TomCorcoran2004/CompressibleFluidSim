@@ -136,6 +136,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(SolutionDir)Include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalOptions>/Qvec-report:2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,9 +146,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.cpp" />
     <ClCompile Include="Fluid\Sim\Fluid\Fluid.cpp" />
+    <ClCompile Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.cpp" />
     <ClCompile Include="Fluid\Render\Gui\Gui.cpp" />
+    <ClCompile Include="Fluid\Sim\Scene\SodShock1D\RiemannSolver\UnitTests.cpp" />
     <ClCompile Include="Include\ImGui\Helpers.cpp" />
     <ClCompile Include="Include\glm\detail\glm.cpp" />
     <ClCompile Include="Include\glm\glm.cppm" />
@@ -171,10 +173,13 @@
     <ClCompile Include="Include\OpenGlBase\Window\MonitorHelper.cpp" />
     <ClCompile Include="Fluid\Sim\Mesh\Mesh.cpp" />
     <ClCompile Include="Fluid\Sim\Scene\SodShock1D\SodShock.cpp" />
+    <ClCompile Include="Fluid\Sim\Scene\SodShock1D\RiemannSolver\Riemann.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.h" />
     <ClInclude Include="Fluid\Sim\Fluid\Fluid.h" />
+    <ClInclude Include="Fluid\DataTypes\Allocators.h" />
+    <ClInclude Include="Fluid\DataTypes\StructOfVectors.h" />
+    <ClInclude Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.h" />
     <ClInclude Include="Fluid\Render\Gui\Gui.h" />
     <ClInclude Include="Include\ImGui\Helpers.h" />
     <ClInclude Include="Include\glad\glad.h" />
@@ -490,6 +495,7 @@
     <ClInclude Include="Fluid\Sim\Mesh\Mesh.h" />
     <ClInclude Include="Fluid\Sim\Scene\Interface.h" />
     <ClInclude Include="Fluid\Sim\Scene\SodShock1D\SodShock.h" />
+    <ClInclude Include="Fluid\Sim\Scene\SodShock1D\RiemannSolver\Riemann.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Include\glm\detail\func_common.inl" />

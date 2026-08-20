@@ -9,7 +9,7 @@
 namespace Gui
 {
     ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_AlwaysAutoResize;
-    bool WindowOpen = true;
+    bool WindowOpen = false;
     const char* WindowTitle = "Press F1 To Toggle";
 
 

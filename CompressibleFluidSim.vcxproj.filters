@@ -87,10 +87,16 @@
     <ClCompile Include="Include\ImGui\implot_items.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\Sim\Fluid\Fluid.cpp">
+    <ClCompile Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.cpp">
+    <ClCompile Include="Fluid\Sim\Scene\SodShock1D\RiemannSolver\Riemann.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Scene\SodShock1D\RiemannSolver\UnitTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\Sim\Fluid\Fluid.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1040,10 +1046,19 @@
     <ClInclude Include="Include\ImGui\implot_internal.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\Fluid\Fluid.h">
+    <ClInclude Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\Sim\BoundaryRegion\BoundaryRegion.h">
+    <ClInclude Include="Fluid\Sim\Scene\SodShock1D\RiemannSolver\Riemann.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\DataTypes\StructOfVectors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\DataTypes\Allocators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\Sim\Fluid\Fluid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

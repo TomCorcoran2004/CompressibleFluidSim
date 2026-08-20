@@ -1,4 +1,5 @@
 #pragma once
+#include <optional>
 #include <glfw/glfw3.h>
 
 #include <ImGui/imgui_impl_glfw.h>
@@ -20,7 +21,6 @@ public:
     struct Config
     {
         i32 NumCells = 0;
-        i32 TotalTicks = 0;
     };
 
     SodShock1D(const Config& SceneConfig);
@@ -47,11 +47,10 @@ private:
     bool IsPaused = false;
 
     Mesh SceneMesh;
-    Fluid SceneFluid;
-    
-    
+    std::optional<Fluid> SceneFluid;
+
     i32 TicksCompleted = 0;
-    i32 TotalTicks = 0;
+
 
     f32 DeltaTime = 0.0f;
     f32 CurrentTime = 0.0f;
@@ -59,14 +58,4 @@ private:
     static constexpr f32 TotalSceneTime = 0.2f;
 
     void SetConservedState();
-
-    struct PrimitiveState
-    {
-        f32 rho = 0.0f;
-        f32 u = 0.0f;
-        f32 P = 0.0f;
-    };
-
-    PrimitiveState ReimannSolver(f32 Position);
 };
-

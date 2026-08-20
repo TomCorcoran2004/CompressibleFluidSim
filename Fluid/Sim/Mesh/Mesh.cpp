@@ -42,6 +42,8 @@ Mesh::Mesh(const Config& MeshConfig) : Mesh()
     Faces.RightCell.resize(Faces.Size);
     Faces.Normal.resize(Faces.Size);
     Faces.Tangent.resize(Faces.Size);
+    Faces.dl.resize(Faces.Size);
+    Faces.Invdl.resize(Faces.Size);
 
     // Setting Up Default Face Data
     for (i32 i = 0; i < HorizontalFacesSizeFlat; ++i)
@@ -57,6 +59,8 @@ Mesh::Mesh(const Config& MeshConfig) : Mesh()
         Faces.RightCell[i] = RightCellIndex;
         Faces.Normal[i] = vec2(0.0f, 1.0f);
         Faces.Tangent[i] = vec2(1.0f, 0.0f);
+        Faces.dl[i] = glm::dot(Faces.Normal[i], vec2(dx, dy));
+        Faces.Invdl[i] = 1.0f / Faces.dl[i];
     }
 
     for (i32 i = HorizontalFacesSizeFlat; i < Faces.Size; ++i)
@@ -72,6 +76,8 @@ Mesh::Mesh(const Config& MeshConfig) : Mesh()
         Faces.RightCell[i] = RightCellIndex;
         Faces.Normal[i] = vec2(1.0f, 0.0f);
         Faces.Tangent[i] = vec2(0.0f, 1.0f);
+        Faces.dl[i] = glm::dot(Faces.Normal[i], vec2(dx, dy));;
+        Faces.Invdl[i] = 1.0f / Faces.dl[i];
     }
 
     // Setting Up Default Cell Data
@@ -108,11 +114,15 @@ i32 Mesh::GetLeftCell(i32 FaceIndex)  const { return Faces.LeftCell[FaceIndex]; 
 i32 Mesh::GetRightCell(i32 FaceIndex) const { return Faces.RightCell[FaceIndex]; }
 vec2 Mesh::GetNormal(i32 FaceIndex)   const { return Faces.Normal[FaceIndex]; }
 vec2 Mesh::GetTangent(i32 FaceIndex)  const { return Faces.Tangent[FaceIndex]; }
+f32 Mesh::Getdl(i32 FaceIndex)  const { return Faces.dl[FaceIndex]; }
+f32 Mesh::GetInvdl(i32 FaceIndex)  const { return Faces.Invdl[FaceIndex]; }
 
 std::span<const i32> Mesh::GetLeftCells()  const { return Faces.LeftCell; }
 std::span<const i32> Mesh::GetRightCells() const { return Faces.RightCell; }
 std::span<const vec2> Mesh::GetNormals()   const { return Faces.Normal; }
 std::span<const vec2> Mesh::GetTangents()  const { return Faces.Tangent; }
+std::span<const f32> Mesh::Getdls()  const { return Faces.dl; }
+std::span<const f32> Mesh::GetInvdls()  const { return Faces.Invdl; }
 i32 Mesh::GetFacesSize() const { return Faces.Size; }
 
 bool Mesh::IsValidCell(i32 Index)             const { return Index >= 0 && Index < Cells.SizeFlat; }

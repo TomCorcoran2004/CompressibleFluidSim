@@ -1,27 +1,62 @@
 #pragma once
 #include <vector>
-#include <glm/glm.hpp>
-#include "../BoundaryRegion/BoundaryRegion.h"
+#include <memory>
 
-class Mesh;
+#include <glm/glm.hpp>
+
+#include "../Fluid/DataTypes/StructOfVectors.h"
+
+#include "../Mesh/Mesh.h"
 
 class Fluid
 {
 public:
     struct Config
     {
-        const Mesh* Mesh = nullptr;
-        f32 dt = 0.0f;
+        Config(const Mesh& _Mesh, f32 _R, f32 _Gamma, f32 _CflTarget) :
+            SceneMesh(_Mesh), R(_R), Gamma(_Gamma), CflTarget(_CflTarget){}
+        
+        const Mesh& SceneMesh;
         f32 R = 1.0f;
-        f32 gamma = 1.4f;
+        f32 Gamma = 1.4f;
+        f32 CflTarget = 0.5f;
     };
 
-    Fluid();
-    Fluid(const Config& Config);
+    enum class ConservedFields : std::size_t
+    {
+        Rho,
+        Rhou,
+        Rhov,
+        E
+    };
 
-    //EOS's
-    f32 IdealGasLaw_E(f32 P, f32 rho, f32 u, f32 v);
-    f32 IdealGasLaw_P(f32 E, f32 rho, f32 u, f32 v);
+    enum class DerivedFields : std::size_t
+    {
+        InvRho,
+        u,
+        v,
+        p,
+        c,
+    };
+
+    enum class FluxFields : std::size_t
+    {
+        Mass,
+        Momentumu,
+        Momentumv,
+        Energy,
+    };
+
+    Fluid(const Config& Config);    
+
+
+    void TimeStep();
+
+    //Math Helpers
+    f32 IdealGasLaw_E(f32 p, f32 Rho, f32 u, f32 v) const;
+    f32 IdealGasLaw_P(f32 E, f32 Rho, f32 u, f32 v) const;
+    f32 CflCondition(f32 dx, f32 u, f32 a) const;
+    f32 Rusanov(f32 FluxLeft, f32 FluxRight, f32 Alpha, f32 ConservedLeft, f32 ConservedRight) const;
 
     void SetRho(i32 CellIdx, f32 Val);
     void SetU(i32 CellIdx, f32 Val);
@@ -29,74 +64,42 @@ public:
     void SetP(i32 CellIdx, f32 Val);
 
     std::span<const f32> GetRho() const;
-    std::span<const f32> GetRhoU() const;
-    std::span<const f32> GetRhoV() const;
-    std::span<const f32> GetETotal() const;
+    std::span<const f32> GetRhou() const;
+    std::span<const f32> GetRhov() const;
+    std::span<const f32> GetE() const;
 
-    std::span<const f32> GetRho(i32 Start, i32 End) const;
-    std::span<const f32> GetRhoU(i32 Start, i32 End) const;
-    std::span<const f32> GetRhoV(i32 Start, i32 End) const;
-    std::span<const f32> GetETotal(i32 Start, i32 End) const;
+    std::span<const f32> GetRho(i32 Start, i32 Count) const;
+    std::span<const f32> GetRhou(i32 Start, i32 Count) const;
+    std::span<const f32> GetRhov(i32 Start, i32 Count) const;
+    std::span<const f32> GetE(i32 Start, i32 Count) const;
 
-    void Tick();
+    f32 GetGamma() const;
+    f32 GetR() const;
+    f32 GetTimeElapsed() const;
+
 private:
-    struct ConservedStates
-    {
-        std::vector<f32> rho = {  };
-        std::vector<f32> rho_u = {  };
-        std::vector<f32> rho_v = {  };
-        std::vector<f32> e_total = {  };
-    };
+    SoV<f32, ConservedFields, 4, 64> ConservedStates;
+    SoV<f32, ConservedFields, 4, 64> ConservedStatesTemp;
+    SoV<f32, DerivedFields, 5, 64> DerivedStates;
 
-    struct ConservedState
-    {
-        f32 rho = 0.0f;
-        f32 rho_u = 0.0f;
-        f32 rho_v = 0.0f;
-        f32 e_total = 0.0f;
-    };
+    const Mesh& SceneMesh;
 
-    struct DerivedState
-    {
-        f32 u = 0.0f;
-        f32 v = 0.0f;
-        f32 P = 0.0f;
-        f32 c = 0.0f;
-    };
+    f32 dt;
+    f32 R;
+    f32 Gamma;
+    f32 CflTarget;
 
-    struct Flux
-    {
-        f32 Mass = 0.0f;
-        f32 u_momentum = 0.0f;
-        f32 v_momentum = 0.0f;
-        f32 Energy = 0.0f;
-    };
+    f32 TimeElapsed;
 
-    struct Fluxes
-    {
-        std::vector<f32> Mass = {  };
-        std::vector<f32> u_momentum = {  };
-        std::vector<f32> v_momentum = {  };
-        std::vector<f32> Energy = {  };
-    };
+    void CalculateDerivedStates();
+    void CalculateTimeStep();
+    void CalculateFaceFluxTransfer();
 
-    const Mesh* SceneMesh = nullptr;
-
-    f32 dx = 0.0f;
-    f32 dy = 0.0f;
-    f32 dt = 0.0f;
-    f32 R = 0.0f;
-    f32 gamma = 0.0f;
-
-    ConservedStates State = {  };
-    ConservedStates TempState = {  };
-    Fluxes DeltaFluxes = {  };
-
-    ConservedState GetConservedState(i32 CellIdx);
-    ConservedState GetSlipWallGhostState(const ConservedState& State, const vec2& Normal);
-    Flux GetDeltaFlux(const ConservedState& Left, const ConservedState& Right, const vec2& Normal);
-
-    f32 Rusanov(f32 FluxLeft, f32 FluxRight, f32 alpha, f32 ConservedLeft, f32 ConservedRight);
-    
+    void CalculateNoneRegion(const BoundaryRegion& Region);
+    void CalculateSlipWallRegion(const BoundaryRegion& Region);
+    void CalculateSupersonicInflowRegion(const BoundaryRegion& Region);
+    void CalculateSubsonicInflowRegion(const BoundaryRegion& Region);
+    void CalculateSupersonicOutflowRegion(const BoundaryRegion& Region);
+    void CalculateSubsonicOutflowRegion(const BoundaryRegion& Region);
 };
 

@@ -1,296 +1,303 @@
 #include "Fluid.h"
-#include "../Mesh/Mesh.h"
 
-Fluid::Fluid()
+Fluid::Fluid(const Config& Config) : SceneMesh(Config.SceneMesh)
 {
-    
-}
-
-Fluid::Fluid(const Config& Config) : Fluid()
-{
-    if (Config.Mesh == nullptr) return;
-
-    SceneMesh = Config.Mesh;
-
-    dx = SceneMesh->Getdx();
-    dy = SceneMesh->Getdy();
-
-    dt = Config.dt;
     R = Config.R;
-    gamma = Config.gamma;
+    Gamma = Config.Gamma;
+    CflTarget = Config.CflTarget;
 
     // Init ConservedState
-    i32 NumCells = SceneMesh->GetCellsSizeFlat();
-    
-    State.rho.resize(NumCells, 0.0f);
-    State.rho_u.resize(NumCells, 0.0f);
-    State.rho_v.resize(NumCells, 0.0f);
-    State.e_total.resize(NumCells, 0.0f);
+    i32 NumCells = SceneMesh.GetCellsSizeFlat();
+    ConservedStates.resize(NumCells, 0.0f);
+    ConservedStatesTemp.resize(NumCells, 0.0f);
+    DerivedStates.resize(NumCells, 0.0f);
+}
 
-    TempState.rho.resize(NumCells, 0.0f);
-    TempState.rho_u.resize(NumCells, 0.0f);
-    TempState.rho_v.resize(NumCells, 0.0f);
-    TempState.e_total.resize(NumCells, 0.0f);
+void Fluid::TimeStep()
+{
+    CalculateDerivedStates();
+    CalculateTimeStep();
 
-    i32 NumFaces = SceneMesh->GetFacesSize();
-    DeltaFluxes.Mass.resize(NumFaces, 0.0f);
-    DeltaFluxes.u_momentum.resize(NumFaces, 0.0f);
-    DeltaFluxes.v_momentum.resize(NumFaces, 0.0f);
-    DeltaFluxes.Energy.resize(NumFaces, 0.0f);
+    TimeElapsed += dt;
+
+    std::copy(ConservedStates.begin(), ConservedStates.end(), ConservedStatesTemp.begin());
+
+    CalculateFaceFluxTransfer();
+
+    ConservedStates = std::move(ConservedStatesTemp);
+}
+
+f32 Fluid::IdealGasLaw_E(f32 P, f32 rho, f32 u, f32 v) const
+{
+    return P / (Gamma - 1.0f) + 0.5f * rho * (u * u + v * v);
+}
+
+f32 Fluid::IdealGasLaw_P(f32 E, f32 rho, f32 u, f32 v) const
+{
+    return (Gamma - 1.0f) * (E - 0.5f * rho * (u * u + v * v));
+}
+
+f32 Fluid::CflCondition(f32 dx, f32 u, f32 a) const
+{
+    return (CflTarget * dx) / (glm::abs(u) + a);
+}
+
+f32 Fluid::Rusanov(f32 FluxLeft, f32 FluxRight, f32 Alpha, f32 ConservedLeft, f32 ConservedRight) const
+{
+    return (FluxLeft + FluxRight) * 0.5f - 0.5f * Alpha * (ConservedRight - ConservedLeft);
 }
 
 void Fluid::SetRho(i32 CellIdx, f32 Val)
 {
-    State.rho[CellIdx] = Val;
+    ConservedStates[ConservedFields::Rho][CellIdx] = Val;
+    DerivedStates[DerivedFields::InvRho][CellIdx] = 1.0f / Val;
 }
 
 void Fluid::SetU(i32 CellIdx, f32 Val)
 {
-    State.rho_u[CellIdx] = Val * State.rho[CellIdx];
+    ConservedStates[ConservedFields::Rhou][CellIdx] = Val * ConservedStates[ConservedFields::Rho][CellIdx];
 }
 
 void Fluid::SetV(i32 CellIdx, f32 Val)
 {
-    State.rho_v[CellIdx] = Val * State.rho[CellIdx];
+    ConservedStates[ConservedFields::Rhov][CellIdx] = Val * ConservedStates[ConservedFields::Rho][CellIdx];
 }
 
 void Fluid::SetP(i32 CellIdx, f32 Val)
 {
-    f32 rho = State.rho[CellIdx];
-    f32 u = State.rho_u[CellIdx] / rho;
-    f32 v = State.rho_v[CellIdx] / rho;
-    
-    State.e_total[CellIdx] = IdealGasLaw_E(Val, rho, u, v);
+    f32 u = ConservedStates[ConservedFields::Rhou][CellIdx] * DerivedStates[DerivedFields::InvRho][CellIdx];
+    f32 v = ConservedStates[ConservedFields::Rhov][CellIdx] * DerivedStates[DerivedFields::InvRho][CellIdx];
+
+    ConservedStates[ConservedFields::E][CellIdx] = IdealGasLaw_E(Val, ConservedStates[ConservedFields::Rho][CellIdx], u, v);
 }
 
 std::span<const f32> Fluid::GetRho() const
-{ 
-    return State.rho; 
-}
-
-std::span<const f32> Fluid::GetRhoU() const
-{ 
-    return State.rho_u; 
-}
-
-std::span<const f32> Fluid::GetRhoV() const
-{ 
-    return State.rho_v; 
-}
-
-std::span<const f32> Fluid::GetETotal() const
-{ 
-    return State.e_total; 
-}
-
-std::span<const f32> Fluid::GetRho(i32 Start, i32 End) const
 {
-    return std::span<const f32>(State.rho).subspan(Start, End);
+    return ConservedStates[ConservedFields::Rho];
 }
 
-std::span<const f32> Fluid::GetRhoU(i32 Start, i32 End) const
+std::span<const f32> Fluid::GetRhou() const
 {
-    return std::span<const f32>(State.rho_u).subspan(Start, End);
+    return ConservedStates[ConservedFields::Rhou];
 }
 
-std::span<const f32> Fluid::GetRhoV(i32 Start, i32 End) const
+std::span<const f32> Fluid::GetRhov() const
 {
-    return std::span<const f32>(State.rho_v).subspan(Start, End);
+    return ConservedStates[ConservedFields::Rhov];
 }
 
-std::span<const f32> Fluid::GetETotal(i32 Start, i32 End) const
+std::span<const f32> Fluid::GetE() const
 {
-    return std::span<const f32>(State.e_total).subspan(Start, End);
+    return ConservedStates[ConservedFields::E];
 }
 
-void Fluid::Tick()
+std::span<const f32> Fluid::GetRho(i32 Start, i32 Count) const
 {
-    TempState = State;
+    return std::span<const f32>(ConservedStates[ConservedFields::Rho]).subspan(Start, Count);
+}
 
-    const std::span<const i32> LeftCells = SceneMesh->GetLeftCells();
-    const std::span<const i32> RightCells = SceneMesh->GetRightCells();
-    const std::span<const vec2> Normals = SceneMesh->GetNormals();
+std::span<const f32> Fluid::GetRhou(i32 Start, i32 Count) const
+{
+    return std::span<const f32>(ConservedStates[ConservedFields::Rhou]).subspan(Start, Count);
+}
 
-    for (const BoundaryRegion& Region : SceneMesh->GetBoundaryRegions())
+std::span<const f32> Fluid::GetRhov(i32 Start, i32 Count) const
+{
+    return std::span<const f32>(ConservedStates[ConservedFields::Rhov]).subspan(Start, Count);
+}
+
+std::span<const f32> Fluid::GetE(i32 Start, i32 Count) const
+{
+    return std::span<const f32>(ConservedStates[ConservedFields::E]).subspan(Start, Count);
+}
+
+f32 Fluid::GetGamma() const
+{
+    return Gamma;
+}
+
+f32 Fluid::GetR() const
+{
+    return R;
+}
+
+f32 Fluid::GetTimeElapsed() const
+{
+    return TimeElapsed;
+}
+
+//TODO -> MultiThread
+void Fluid::CalculateDerivedStates()
+{
+    using enum ConservedFields;
+    using enum DerivedFields;
+
+    //has to be taken out of the loop for vectorisation
+    const std::size_t NumCells = SceneMesh.GetCellsSizeFlat();
+
+    for (std::size_t i = 0; i < NumCells; ++i)
+    {
+        DerivedStates[InvRho][i] = 1.0f / ConservedStates[Rho][i];
+        DerivedStates[v][i] = ConservedStates[Rhov][i] * DerivedStates[InvRho][i];
+        DerivedStates[u][i] = ConservedStates[Rhou][i] * DerivedStates[InvRho][i];
+        DerivedStates[p][i] = IdealGasLaw_P(ConservedStates[E][i], ConservedStates[Rho][i], DerivedStates[u][i], DerivedStates[v][i]);
+        DerivedStates[c][i] = std::sqrtf(Gamma * DerivedStates[p][i] * DerivedStates[InvRho][i]);
+    }
+}
+
+void Fluid::CalculateTimeStep()
+{
+    using enum DerivedFields;
+
+    f32 MinTimeStep = std::numeric_limits<f32>::max();
+
+    const f32 dy = SceneMesh.Getdy();
+    const f32 dx = SceneMesh.Getdx();
+
+    for (i32 i = 0; i < SceneMesh.GetCellsSizeFlat(); ++i)
+    {
+        const f32 CflTimeStepX = CflCondition(dx, DerivedStates[u][i], DerivedStates[c][i]);
+        const f32 CflTimeStepY = CflCondition(dy, DerivedStates[v][i], DerivedStates[c][i]);
+
+        const f32 CflTimeStep = glm::min(CflTimeStepX, CflTimeStepY);
+        MinTimeStep = glm::min(MinTimeStep, CflTimeStep);
+    }
+
+    dt = MinTimeStep;
+}
+
+void Fluid::CalculateFaceFluxTransfer()
+{
+    for (const BoundaryRegion& Region : SceneMesh.GetBoundaryRegions())
     {
         BoundaryRegion::BoundaryTypes Type = Region.GetType();
         std::span<const i32> Faces = Region.GetFaces();
 
         switch (Type)
         {
-        case(BoundaryRegion::BoundaryTypes::None):
-            for (i32 i = 0; i < Faces.size(); ++i)
+            case(BoundaryRegion::BoundaryTypes::None): 
             {
-                const i32 FaceIdx = Faces[i];
-
-                const i32 LeftCell = LeftCells[FaceIdx];
-                const i32 RightCell = RightCells[FaceIdx];
-                const vec2 Normal = Normals[FaceIdx];
-
-                const ConservedState LeftConservedState = GetConservedState(LeftCell);
-
-                const ConservedState RightConservedState = GetConservedState(RightCell);
-
-                const Flux DeltaFlux = GetDeltaFlux(LeftConservedState, RightConservedState, Normal);
-            
-                DeltaFluxes.Mass[FaceIdx] = DeltaFlux.Mass;
-                DeltaFluxes.u_momentum[FaceIdx] = DeltaFlux.u_momentum;
-                DeltaFluxes.v_momentum[FaceIdx] = DeltaFlux.v_momentum;
-                DeltaFluxes.Energy[FaceIdx] = DeltaFlux.Energy;
+                CalculateNoneRegion(Region);
+                break;
             }
-            break;
-        case(BoundaryRegion::BoundaryTypes::SlipWall):
-            for (i32 i = 0; i < Faces.size(); ++i)
+            case(BoundaryRegion::BoundaryTypes::SlipWall):
             {
-                const i32 FaceIdx = Faces[i];
-                DeltaFluxes.Mass[FaceIdx] = 0.0f;
-                DeltaFluxes.u_momentum[FaceIdx] = 0.0f;
-                DeltaFluxes.v_momentum[FaceIdx] = 0.0f;
-                DeltaFluxes.Energy[FaceIdx] = 0.0f;
-                
-                const i32 LeftCell = LeftCells[FaceIdx];
-                const i32 RightCell = RightCells[FaceIdx];
-                const vec2 Normal = Normals[FaceIdx];
-
-                const ConservedState LeftConservedState = GetConservedState(LeftCell);
-                const ConservedState RightGhostState = GetSlipWallGhostState(LeftConservedState, Normal);
-                
-                Flux LeftDeltaFlux = GetDeltaFlux(LeftConservedState, RightGhostState, Normal);
-
-                const ConservedState RightConservedState = GetConservedState(RightCell);
-                const ConservedState LeftGhostState = GetSlipWallGhostState(RightConservedState, Normal);
-
-                Flux RightDeltaFlux = GetDeltaFlux(LeftGhostState, RightConservedState, Normal);
-                
-                const f32 dl = dx * Normal.x + dy * Normal.y;
-                const f32 dt_div_dl = dt / dl;
-
-                TempState.rho[LeftCell] -= LeftDeltaFlux.Mass * dt_div_dl;
-                TempState.rho_u[LeftCell] -= LeftDeltaFlux.u_momentum * dt_div_dl;
-                TempState.rho_v[LeftCell] -= LeftDeltaFlux.v_momentum * dt_div_dl;
-                TempState.e_total[LeftCell] -= LeftDeltaFlux.Energy * dt_div_dl;
-
-                TempState.rho[RightCell] += RightDeltaFlux.Mass * dt_div_dl;
-                TempState.rho_u[RightCell] += RightDeltaFlux.u_momentum * dt_div_dl;
-                TempState.rho_v[RightCell] += RightDeltaFlux.v_momentum * dt_div_dl;
-                TempState.e_total[RightCell] += RightDeltaFlux.Energy * dt_div_dl;
-                
+                CalculateSlipWallRegion(Region);
+                break;
             }
-            break;
+            case(BoundaryRegion::BoundaryTypes::SupersonicInflow):
+            {
+                CalculateSupersonicInflowRegion(Region);
+                break;
+            }
+            case(BoundaryRegion::BoundaryTypes::SubsonicInflow):
+            {
+                CalculateSubsonicInflowRegion(Region);
+                break;
+            }
+            case(BoundaryRegion::BoundaryTypes::SupersonicOutflow):
+            {
+                CalculateSupersonicOutflowRegion(Region);
+                break;
+            }
+            case(BoundaryRegion::BoundaryTypes::SubsonicOutflow):
+            {
+                CalculateSubsonicOutflowRegion(Region);
+                break;
+            }
         }
     }
+}
 
-    for (i32 i = 0; i < SceneMesh->GetFacesSize(); ++i)
+void Fluid::CalculateNoneRegion(const BoundaryRegion& Region)
+{
+    using enum ConservedFields;
+    using enum DerivedFields;
+    using enum FluxFields;
+
+    const std::span<const i32> Faces = Region.GetFaces();
+
+    for (std::size_t i = 0; i < Faces.size(); ++i)
     {
-        const vec2& Normal = Normals[i];
-        const i32 LeftCell = LeftCells[i];
-        const i32 RightCell = RightCells[i];
-        
-        const f32 dl = dx * Normal.x + dy * Normal.y;
-        const f32 dt_div_dl = dt / dl;
+        const i32 FaceIdx = Faces[i];
+        const i32 LeftState = SceneMesh.GetLeftCell(FaceIdx);
+        const i32 RightState = SceneMesh.GetRightCell(FaceIdx);
+        const vec2 Normal = SceneMesh.GetNormal(FaceIdx);
+        const f32 dt_div_dl = dt * SceneMesh.GetInvdl(FaceIdx);
 
-        TempState.rho[LeftCell] -= DeltaFluxes.Mass[i] * dt_div_dl;
-        TempState.rho_u[LeftCell] -= DeltaFluxes.u_momentum[i] * dt_div_dl;
-        TempState.rho_v[LeftCell] -= DeltaFluxes.v_momentum[i] * dt_div_dl;
-        TempState.e_total[LeftCell] -= DeltaFluxes.Energy[i] * dt_div_dl;
+        const f32 LeftNormalVelocity = DerivedStates[u][LeftState] * Normal.x + DerivedStates[v][LeftState] * Normal.y;
 
-        TempState.rho[RightCell] += DeltaFluxes.Mass[i] * dt_div_dl;
-        TempState.rho_u[RightCell] += DeltaFluxes.u_momentum[i] * dt_div_dl;
-        TempState.rho_v[RightCell] += DeltaFluxes.v_momentum[i] * dt_div_dl;
-        TempState.e_total[RightCell] += DeltaFluxes.Energy[i] * dt_div_dl;
+        const f32 LeftFlux[4] = {
+            ConservedStates[Rho][LeftState] * LeftNormalVelocity,
+            ConservedStates[Rhou][LeftState] * LeftNormalVelocity + DerivedStates[p][LeftState] * Normal.x,
+            ConservedStates[Rhov][LeftState] * LeftNormalVelocity + DerivedStates[p][LeftState] * Normal.y,
+            (ConservedStates[E][LeftState] + DerivedStates[p][LeftState]) * LeftNormalVelocity
+        };
+
+        const f32 RightNormalVelocity = DerivedStates[u][RightState] * Normal.x + DerivedStates[v][RightState] * Normal.y;
+
+        const f32 RightFlux[4] = {
+            ConservedStates[Rho][RightState] * RightNormalVelocity,
+            ConservedStates[Rhou][RightState] * RightNormalVelocity + DerivedStates[p][RightState] * Normal.x,
+            ConservedStates[Rhov][RightState] * RightNormalVelocity + DerivedStates[p][RightState] * Normal.y,
+            (ConservedStates[E][RightState] + DerivedStates[p][RightState]) * RightNormalVelocity
+        };
+
+        const f32 alpha = glm::max(glm::abs(LeftNormalVelocity) + DerivedStates[c][LeftState],
+            glm::abs(RightNormalVelocity) + DerivedStates[c][RightState]);
+
+        const f32 DeltaFlux[4] =
+        {
+            Rusanov(LeftFlux[0], RightFlux[0], alpha, ConservedStates[Rho][LeftState], ConservedStates[Rho][RightState]),
+            Rusanov(LeftFlux[1], RightFlux[1], alpha, ConservedStates[Rhou][LeftState], ConservedStates[Rhou][RightState]),
+            Rusanov(LeftFlux[2], RightFlux[2], alpha, ConservedStates[Rhov][LeftState], ConservedStates[Rhov][RightState]),
+            Rusanov(LeftFlux[3], RightFlux[3], alpha, ConservedStates[E][LeftState], ConservedStates[E][RightState]),
+        };
+
+        ConservedStatesTemp[Rho][LeftState] -= DeltaFlux[0] * dt_div_dl;
+        ConservedStatesTemp[Rhou][LeftState] -= DeltaFlux[1] * dt_div_dl;
+        ConservedStatesTemp[Rhov][LeftState] -= DeltaFlux[2] * dt_div_dl;
+        ConservedStatesTemp[E][LeftState] -= DeltaFlux[3] * dt_div_dl;
+
+        ConservedStatesTemp[Rho][RightState] += DeltaFlux[0] * dt_div_dl;
+        ConservedStatesTemp[Rhou][RightState] += DeltaFlux[1] * dt_div_dl;
+        ConservedStatesTemp[Rhov][RightState] += DeltaFlux[2] * dt_div_dl;
+        ConservedStatesTemp[E][RightState] += DeltaFlux[3] * dt_div_dl;
     }
-
-    State = TempState;
 }
 
-Fluid::ConservedState Fluid::GetConservedState(i32 CellIdx)
+void Fluid::CalculateSlipWallRegion(const BoundaryRegion& Region)
 {
-    return ConservedState{
-        .rho = State.rho[CellIdx],
-        .rho_u = State.rho_u[CellIdx],
-        .rho_v = State.rho_v[CellIdx],
-        .e_total = State.e_total[CellIdx]
-    };
+    using enum ConservedFields;
+    using enum DerivedFields;
+    using enum FluxFields;
+    
+    const i32* __restrict Faces = Region.GetFaces().data();
+    const i32* __restrict LeftCells = SceneMesh.GetLeftCells().data();
+    const i32* __restrict RightCells = SceneMesh.GetRightCells().data();
+    const vec2* __restrict Normals = SceneMesh.GetNormals().data();
+    const f32* __restrict Invdls = SceneMesh.GetInvdls().data();
+
+    const std::size_t Size = Region.GetFaces().size();
+    
+    for (std::size_t i = 0; i < Size; ++i)
+    {
+        const i32 FaceIdx = Faces[i];
+
+        const i32 LeftState = LeftCells[FaceIdx];
+        const i32 RightState = RightCells[FaceIdx];
+        const vec2 Normal = Normals[FaceIdx];
+        const f32 dt_div_dl = dt * Invdls[FaceIdx];
+
+        ConservedStatesTemp[Rhou][LeftState] -= DerivedStates[p][LeftState] * Normal.x * dt_div_dl;
+        ConservedStatesTemp[Rhov][LeftState] -= DerivedStates[p][LeftState] * Normal.y * dt_div_dl;
+        ConservedStatesTemp[Rhou][RightState] += DerivedStates[p][RightState] * Normal.x * dt_div_dl;
+        ConservedStatesTemp[Rhov][RightState] += DerivedStates[p][RightState] * Normal.y * dt_div_dl;
+    }
 }
 
-Fluid::ConservedState Fluid::GetSlipWallGhostState(const ConservedState& State, const vec2& Normal)
-{
-    const f32 rho = State.rho;
-    const f32 u = State.rho_u / rho;
-    const f32 v = State.rho_v / rho;
+void Fluid::CalculateSupersonicInflowRegion(const BoundaryRegion& Region){}
+void Fluid::CalculateSubsonicInflowRegion(const BoundaryRegion& Region){}
+void Fluid::CalculateSupersonicOutflowRegion(const BoundaryRegion& Region){}
+void Fluid::CalculateSubsonicOutflowRegion(const BoundaryRegion& Region){}
 
-    f32 dot = u * Normal.x + v * Normal.y;
-
-    f32 u_reflected = u - 2.0f * dot * Normal.x;
-    f32 v_reflected = v - 2.0f * dot * Normal.y;
-
-    return ConservedState{
-        .rho = State.rho,
-        .rho_u = u_reflected * rho,
-        .rho_v = v_reflected * rho,
-        .e_total = State.e_total
-    };
-}
-
-Fluid::Flux Fluid::GetDeltaFlux(const ConservedState& Left, const ConservedState& Right, const vec2& Normal)
-{
-    const DerivedState LeftDerivedState = {
-            .u = Left.rho_u / Left.rho,
-            .v = Left.rho_v / Left.rho,
-            .P = IdealGasLaw_P(Left.e_total, Left.rho, LeftDerivedState.u, LeftDerivedState.v),
-            .c = std::sqrtf(gamma * LeftDerivedState.P / Left.rho)
-    };
-
-    const f32 LeftNormalVelocity = LeftDerivedState.u * Normal.x + LeftDerivedState.v * Normal.y;
-
-    const Flux LeftFlux = {
-        .Mass = Left.rho * LeftNormalVelocity,
-        .u_momentum = Left.rho_u * LeftNormalVelocity + LeftDerivedState.P * Normal.x,
-        .v_momentum = Left.rho_v * LeftNormalVelocity + LeftDerivedState.P * Normal.y,
-        .Energy = (Left.e_total + LeftDerivedState.P) * LeftNormalVelocity
-    };
-
-    const DerivedState RightDerivedState = {
-        .u = Right.rho_u / Right.rho,
-        .v = Right.rho_v / Right.rho,
-        .P = IdealGasLaw_P(Right.e_total, Right.rho, RightDerivedState.u, RightDerivedState.v),
-        .c = std::sqrtf(gamma * RightDerivedState.P / Right.rho)
-    };
-
-
-    const f32 RightNormalVelocity = RightDerivedState.u * Normal.x + RightDerivedState.v * Normal.y;
-
-    const Flux RightFlux = {
-        .Mass = Right.rho * RightNormalVelocity,
-        .u_momentum = Right.rho_u * RightNormalVelocity + RightDerivedState.P * Normal.x,
-        .v_momentum = Right.rho_v * RightNormalVelocity + RightDerivedState.P * Normal.y,
-        .Energy = (Right.e_total + RightDerivedState.P) * RightNormalVelocity
-    };
-
-    const f32 alpha = glm::max(glm::abs(LeftNormalVelocity) + LeftDerivedState.c,
-        glm::abs(RightNormalVelocity) + RightDerivedState.c);
-
-    Flux DeltaFlux = {
-        .Mass =       Rusanov(LeftFlux.Mass,       RightFlux.Mass,       alpha, Left.rho,     Right.rho),
-        .u_momentum = Rusanov(LeftFlux.u_momentum, RightFlux.u_momentum, alpha, Left.rho_u,   Right.rho_u),
-        .v_momentum = Rusanov(LeftFlux.v_momentum, RightFlux.v_momentum, alpha, Left.rho_v,   Right.rho_v),
-        .Energy =     Rusanov(LeftFlux.Energy,     RightFlux.Energy,     alpha, Left.e_total, Right.e_total),
-    };
-
-    return DeltaFlux;
-}
-
-f32 Fluid::IdealGasLaw_E(f32 P, f32 rho, f32 u, f32 v)
-{
-    return P / (gamma - 1) + 0.5f * rho * (u * u + v * v);
-}
-
-f32 Fluid::IdealGasLaw_P(f32 E, f32 rho, f32 u, f32 v)
-{
-    return (gamma - 1) * (E - 0.5f * rho * (u * u + v * v));
-}
-
-f32 Fluid::Rusanov(f32 FluxLeft, f32 FluxRight, f32 alpha, f32 ConservedLeft, f32 ConservedRight)
-{
-    return (FluxLeft + FluxRight) * 0.5f - 0.5f * alpha * (ConservedRight - ConservedLeft);
-}

@@ -11,6 +11,7 @@ namespace Base
             Log::LastGLFWError();
             return false;
         }
+        return true;
     }
 
     void Destroy()

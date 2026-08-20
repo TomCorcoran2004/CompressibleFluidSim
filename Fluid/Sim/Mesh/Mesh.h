@@ -34,12 +34,17 @@ public:
     i32 GetRightCell(i32 FaceIndex) const;
     vec2 GetNormal(i32 FaceIndex) const;
     vec2 GetTangent(i32 FaceIndex) const;
+    f32 Getdl(i32 FaceIndex) const;
+    f32 GetInvdl(i32 FaceIndex) const;
 
     // Face Raw Data Getters
     std::span<const i32> GetLeftCells() const;
     std::span<const i32> GetRightCells() const;
     std::span<const vec2> GetNormals() const;
     std::span<const vec2> GetTangents() const;
+    std::span<const f32> Getdls() const;
+    std::span<const f32> GetInvdls() const;
+    
     i32 GetFacesSize() const;
     
     // Cell Index Helpers
@@ -90,6 +95,8 @@ private:
         std::vector<i32> RightCell = {  };
         std::vector<vec2> Normal = {  };
         std::vector<vec2> Tangent = {  };
+        std::vector<f32> dl = {  };
+        std::vector<f32> Invdl = {  };
 
         i32 Size = 0;
     };

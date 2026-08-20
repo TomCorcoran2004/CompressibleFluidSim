@@ -1,4 +1,5 @@
 #include "SodShock.h"
+#include "RiemannSolver/Riemann.h"
 
 bool BorderFunc(const BoundaryRegion::FaceInfo& FaceInfo, const BoundaryRegion::MeshInfo& MeshInfo)
 {
@@ -45,8 +46,6 @@ SodShock1D::SodShock1D(const SodShock1D::Config& SceneConfig)
     };
     SceneMesh = Mesh(MeshConfig);
 
-    TotalTicks = TotalTicks;
-
     const BoundaryRegion::BoundaryConfig BorderConfig = {
         .Name = "Border",
         .Type = BoundaryRegion::BoundaryTypes::SlipWall,
@@ -62,12 +61,13 @@ SodShock1D::SodShock1D(const SodShock1D::Config& SceneConfig)
     SceneMesh.AddBoundaryRegion(FluidBorderConfig);
 
     Fluid::Config FluidConfig = Fluid::Config{
-            .Mesh = &SceneMesh,
-            .dt = TotalSceneTime / SceneConfig.TotalTicks,
-            .R = 1.0f,
-            .gamma = 1.4f
+            SceneMesh,  //Mesh
+            1.0f,       //R
+            1.4f,       //Gamma
+            0.5f        //Cfl Target
     };
-    SceneFluid = Fluid(FluidConfig);
+
+    SceneFluid.emplace(FluidConfig);
 
     SetConservedState();
 }
@@ -87,17 +87,14 @@ void SodShock1D::Tick()
     LastTickTime = CurrentTime;
     CurrentTime = glfwGetTime();
     
-    if (TicksCompleted <= TotalTicks)
+    if (SceneFluid->GetTimeElapsed() < TotalSceneTime)
     {
-        ++TicksCompleted;
-
-        SceneFluid.Tick();
+        SceneFluid->TimeStep();
 
         DrawGui();
     }
     else
     {
-        //DrawGui();
         DrawResults();
     }
 }
@@ -121,7 +118,7 @@ void SodShock1D::Step()
 
 bool SodShock1D::IsFinished() const
 {
-    return TicksCompleted == TotalTicks;
+    return SceneFluid->GetTimeElapsed() >= TotalSceneTime;
 }
 
 void SodShock1D::DrawGui() const
@@ -129,17 +126,113 @@ void SodShock1D::DrawGui() const
     ivec2 CellsSize = SceneMesh.GetCellsSize();
     i32 Start = SceneMesh.GetCellIndex(ivec2(1, 1));
     i32 End = SceneMesh.GetCellIndex(ivec2(CellsSize.x - 1, 1));
-    i32 Size = End - Start;
+    const i32 Size = End - Start;
 
-    std::span<const f32> Rho = SceneFluid.GetRho(Start, End);
-    std::span<const f32> RhoU = SceneFluid.GetRhoU(Start, End);
-    std::span<const f32> RhoV = SceneFluid.GetRhoV(Start, End);
-    std::span<const f32> ETotal = SceneFluid.GetETotal(Start, End);
+    std::span<const f32> Rho = SceneFluid->GetRho(Start, End);
+    std::span<const f32> RhoU = SceneFluid->GetRhou(Start, End);
+    std::span<const f32> RhoV = SceneFluid->GetRhov(Start, End);
+    std::span<const f32> ETotal = SceneFluid->GetE(Start, End);
 
     std::vector<f32> u(Size);
     std::vector<f32> v(Size);
     std::vector<f32> P(Size);
     std::vector<f32> XPos(Size);
+
+    //for (i32 i = 0; i < XPos.size(); ++i)
+    //{
+    //    XPos[i] = (static_cast<f32>(i) + 0.5f) / static_cast<f32>(XPos.size());
+    //}
+
+    //for (i32 i = 0; i < Size; ++i)
+    //{
+    //    u[i] = RhoU[i] / Rho[i];
+    //    v[i] = RhoV[i] / Rho[i];
+    //    P[i] = (1.4f - 1.0f) * (ETotal[i] - 0.5f * Rho[i] * (u[i] * u[i] + v[i] * v[i]));
+    //}
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+
+    ImGui::Begin(
+        "Fullscreen",
+        nullptr,
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoCollapse
+    );
+
+    ImGui::Text("%.3f / %.3f Seconds Elapsed", SceneFluid->GetTimeElapsed(), TotalSceneTime);
+    ImGui::Text("TPS = %.3f s", 1.0f / DeltaTime);
+
+    //if (ImPlot::BeginPlot("Sod Shock 1D", ImVec2(-1, -1)))
+    //{
+    //    ImPlotAxisFlags AxisFlags =
+    //        ImPlotAxisFlags_NoMenus |
+    //        ImPlotAxisFlags_NoSideSwitch |
+    //        ImPlotAxisFlags_NoHighlight |
+    //        ImPlotAxisFlags_Foreground |
+    //        ImPlotAxisFlags_RangeFit |
+    //        ImPlotAxisFlags_Lock;
+    //
+    //    ImPlot::SetupAxes("Position", "Density", AxisFlags, AxisFlags);
+    //
+    //    ImPlot::PlotLine("Density", XPos.data(), Rho.data(), XPos.size());
+    //    ImPlot::PlotLine("Velocity", XPos.data(), u.data(), XPos.size());
+    //    ImPlot::PlotLine("Pressure", XPos.data(), P.data(), XPos.size());
+    //
+    //    ImPlot::EndPlot();
+    //}
+    ImGui::End();
+}
+
+
+void SodShock1D::DrawResults() const
+{
+    ivec2 CellsSize = SceneMesh.GetCellsSize();
+    i32 Start = SceneMesh.GetCellIndex(ivec2(1, 1));
+    i32 End = SceneMesh.GetCellIndex(ivec2(CellsSize.x - 1, 1));
+    i32 Size = End - Start;
+
+    std::span<const f32> Rho = SceneFluid->GetRho(Start, End);
+    std::span<const f32> RhoU = SceneFluid->GetRhou(Start, End);
+    std::span<const f32> RhoV = SceneFluid->GetRhov(Start, End);
+    std::span<const f32> ETotal = SceneFluid->GetE(Start, End);
+
+    std::vector<f32> u(Size);
+    std::vector<f32> v(Size);
+    std::vector<f32> P(Size);
+    std::vector<f32> XPos(Size);
+
+    RiemannSolver::W Left = {
+                .rho = 1.0f,
+                .u = 0.0f,
+                .p = 1.0f
+    };
+
+    RiemannSolver::W Right = {
+        .rho = 0.125f,
+        .u = 0.0f,
+        .p = 0.1f
+    };
+
+    RiemannSolver::Config RiemannConfig = {
+        .Left = Left,
+        .Right = Right,
+        .gamma = 1.4f
+    };
+
+    RiemannSolver Solver = { RiemannConfig };
+
+    std::vector<f32> RhoExact(Size);
+    std::vector<f32> UExact(Size);
+    std::vector<f32> PExact(Size);
+
+    f32 RhoResidual = 0.0f;
+    f32 UResidual = 0.0f;
+    f32 PResidual = 0.0f;
 
     for (i32 i = 0; i < XPos.size(); ++i)
     {
@@ -151,6 +244,15 @@ void SodShock1D::DrawGui() const
         u[i] = RhoU[i] / Rho[i];
         v[i] = RhoV[i] / Rho[i];
         P[i] = (1.4f - 1.0f) * (ETotal[i] - 0.5f * Rho[i] * (u[i] * u[i] + v[i] * v[i]));
+
+        RiemannSolver::W State = Solver.Sample(XPos[i] - 0.5f, 0.2f);
+        RhoExact[i] = State.rho;
+        UExact[i] = State.u;
+        PExact[i] = State.p;
+
+        RhoResidual += glm::abs(RhoExact[i] - Rho[i]) * SceneMesh.Getdx();
+        UResidual += glm::abs(UExact[i] - u[i]) * SceneMesh.Getdx();
+        PResidual += glm::abs(PExact[i] - P[i]) * SceneMesh.Getdx();
     }
 
     ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -167,35 +269,56 @@ void SodShock1D::DrawGui() const
         ImGuiWindowFlags_NoCollapse
     );
 
-    ImGui::Text("%d / %d Ticks", TicksCompleted, TotalTicks);
-    ImGui::Text("TPS = %.3f s", 1.0f / DeltaTime);
-    ImGui::Text("Estimated Time Remaining = %f", (TotalTicks - TicksCompleted) * DeltaTime);
+    
+    ImVec2 AvailableWindowArea = ImGui::GetContentRegionAvail();
+    ImVec2 PlotSize = { AvailableWindowArea.x * 0.5f, AvailableWindowArea.y * 0.5f };
 
-    if (ImPlot::BeginPlot("My Plot", ImVec2(-1, -1)))
+    ImPlotAxisFlags AxisFlags =
+        ImPlotAxisFlags_NoMenus |
+        ImPlotAxisFlags_NoSideSwitch |
+        ImPlotAxisFlags_NoHighlight |
+        ImPlotAxisFlags_Foreground |
+        ImPlotAxisFlags_RangeFit |
+        ImPlotAxisFlags_Lock;
+
+    if (ImGui::BeginTable("SodShock Results", 2))
     {
-        ImPlotAxisFlags AxisFlags =
-            ImPlotAxisFlags_NoMenus |
-            ImPlotAxisFlags_NoSideSwitch |
-            ImPlotAxisFlags_NoHighlight |
-            ImPlotAxisFlags_Foreground |
-            ImPlotAxisFlags_RangeFit |
-            ImPlotAxisFlags_Lock;
+        ImGui::TableNextColumn();
+        
+        if (ImPlot::BeginPlot("Density", PlotSize))
+        {
+            ImPlot::SetupAxes("Position", "Density", AxisFlags, AxisFlags);
+            ImPlot::PlotLine("Density", XPos.data(), Rho.data(), XPos.size());
+            ImPlot::PlotLine("Density Exact", XPos.data(), RhoExact.data(), XPos.size());
+            ImPlot::EndPlot();
+        }
 
-        ImPlot::SetupAxes("Position", "Density", AxisFlags, AxisFlags);
+        if (ImPlot::BeginPlot("Velocity", PlotSize))
+        {
+            ImPlot::SetupAxes("Position", "Velocity", AxisFlags, AxisFlags);
+            ImPlot::PlotLine("Velocity", XPos.data(), u.data(), XPos.size());
+            ImPlot::PlotLine("Velocity Exact", XPos.data(), UExact.data(), XPos.size());
+            ImPlot::EndPlot();
+        }
 
-        ImPlot::PlotLine("Density", XPos.data(), Rho.data(), XPos.size());
-        ImPlot::PlotLine("Velocity", XPos.data(), u.data(), XPos.size());
-        ImPlot::PlotLine("Pressure", XPos.data(), P.data(), XPos.size());
+        ImGui::TableNextColumn();
+        
+        if (ImPlot::BeginPlot("Pressure", PlotSize))
+        {
+            ImPlot::SetupAxes("Position", "Pressure", AxisFlags, AxisFlags);
+            ImPlot::PlotLine("Pressure", XPos.data(), P.data(), XPos.size());
+            ImPlot::PlotLine("Pressure Exact", XPos.data(), PExact.data(), XPos.size());
+            ImPlot::EndPlot();
+        }
 
-        ImPlot::EndPlot();
+        ImGui::Text("Rho Residual: %.5f", RhoResidual);
+        ImGui::Text("U Residual: %.5f", UResidual);
+        ImGui::Text("P Residual: %.5f", PResidual);
+        
+        ImGui::EndTable();
     }
+
     ImGui::End();
-}
-
-
-void SodShock1D::DrawResults() const
-{
-
 }
 
 const Mesh& SodShock1D::GetMesh() const
@@ -205,7 +328,7 @@ const Mesh& SodShock1D::GetMesh() const
 
 const Fluid& SodShock1D::GetFluid() const
 {
-    return SceneFluid;
+    return *SceneFluid;
 }
 
 std::string_view SodShock1D::GetName() const
@@ -221,41 +344,17 @@ void SodShock1D::SetConservedState()
 
         if (CellPosition.x < SceneMesh.GetCellsSize().x / 2)
         {
-            SceneFluid.SetRho(i, 1.0f);
-            SceneFluid.SetU(i, 0.0f);
-            SceneFluid.SetV(i, 0.0f);
-            SceneFluid.SetP(i, 1.0f);
+            SceneFluid->SetRho(i, 1.0f);
+            SceneFluid->SetU(i, 0.0f);
+            SceneFluid->SetV(i, 0.0f);
+            SceneFluid->SetP(i, 1.0f);
         }
         else
         {
-            SceneFluid.SetRho(i, 0.125f);
-            SceneFluid.SetU(i, 0.0f);
-            SceneFluid.SetV(i, 0.0f);
-            SceneFluid.SetP(i, 0.1f);
+            SceneFluid->SetRho(i, 0.125f);
+            SceneFluid->SetU(i, 0.0f);
+            SceneFluid->SetV(i, 0.0f);
+            SceneFluid->SetP(i, 0.1f);
         }
     }
-}
-
-f32 PressureFunction(f32 p, f32 pk, f32 alpha_k, f32 gamma, f32 rho_k)
-{
-    if (p <= pk)
-    {
-        return (2.0f * alpha_k) / (gamma - 1.0f) * (glm::pow(p / pk, (gamma - 1.0f) / 2.0f * gamma) - 1.0f);
-    }
-    else
-    {
-        f32 ak = 2.0f / (gamma + 1) * rho_k;
-        f32 bk = (gamma - 1) / (gamma + 1) * pk;
-
-        return (p - pk) * glm::sqrt(ak / (p + bk));
-    }
-}
-
-SodShock1D::PrimitiveState SodShock1D::ReimannSolver(f32 Position)
-{
-    const f32 xi = Position / 0.2f;
-
-    //alpha = sqrt(gamma * P / rho)
-    const f32 alpha_l = glm::sqrt(1.4f);
-    const f32 alpha_r = glm::sqrt((1.4f * 0.1f) / 0.125);
 }

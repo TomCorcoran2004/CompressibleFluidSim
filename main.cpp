@@ -8,6 +8,9 @@
 #include "Fluid/Sim/Fluid/Fluid.h"
 #include "Fluid/Sim/Scene/SodShock1D/SodShock.h"
 
+#include "Fluid/Sim/Scene/SodShock1D/RiemannSolver/Riemann.h"
+
+
 int main()
 {
     Base::Init();
@@ -15,21 +18,13 @@ int main()
     Base::Window::Config Config{
         .Size = glm::ivec2{800, 800},
     };
+
     Base::Window::Init(Config);
-    
     Base::Input::Init();
-
-    Fluid::Config FluidConfig = Fluid::Config{
-        .dt = 1.0f / 100.f,
-        .R = 1.0f,
-        .gamma = 1.4f
-    };
-
     Render::Init();
     
     SodShock1D::Config SodShockConfig = {
         .NumCells = 10000,
-        .TotalTicks = 20000
     };
 
     SodShock1D SodShockScene = { SodShockConfig };
