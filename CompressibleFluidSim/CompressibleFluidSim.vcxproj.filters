@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Fluid\mesh.cpp">
+      <Filter>Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\solver.cpp">
+      <Filter>Solver</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\boundary_region.cpp">
+      <Filter>BoundaryRegions</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\riemann_solver.cpp">
+      <Filter>Solver\RiemannSolver</Filter>
+    </ClCompile>
+    <ClCompile Include="Fluid\riemann_solver_unit_tests.cpp">
+      <Filter>Solver\RiemannSolver</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Fluid\mesh.h">
+      <Filter>Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\solver.h">
+      <Filter>Solver</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\boundary_region.h">
+      <Filter>BoundaryRegions</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\riemann_solver.h">
+      <Filter>Solver\RiemannSolver</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\std_allocators.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\struct_of_vectors.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Fluid\types.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Mesh">
+      <UniqueIdentifier>{c92cc3ad-e2b1-4619-9cb5-27e06a5bd271}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solver">
+      <UniqueIdentifier>{d7e6065c-1f4e-4a6b-9601-b6c1c0a133a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BoundaryRegions">
+      <UniqueIdentifier>{e76a3ed5-92b6-4a38-ba14-f1516304ae7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solver\RiemannSolver">
+      <UniqueIdentifier>{7d85e2c3-e807-4089-8a39-f33fc3514c25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{ce10387b-2cb5-4492-b3e0-83e37e1b7051}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
