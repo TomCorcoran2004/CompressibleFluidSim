@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36408.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CompressibleFluidSim", "CompressibleFluidSim\CompressibleFluidSim.vcxproj", "{E2E62F41-D160-4CB3-A7C2-60E928BB9AEC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SodShockTube", "SodShockTube\SodShockTube\SodShockTube.vcxproj", "{0FCCD127-D87B-4BB9-8916-FF741B377DF1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SodShockTube", "SodShockTube\SodShockTube.vcxproj", "{0FCCD127-D87B-4BB9-8916-FF741B377DF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
