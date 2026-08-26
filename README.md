@@ -8,51 +8,6 @@ The solver is currently under active development.
 
 ---
 
-## Overview
-
-The current solver is built around a face-based finite-volume formulation for the **2D compressible Euler equations**:
-
-\[
-\frac{\partial \mathbf{U}}{\partial t}
-+
-\nabla \cdot \mathbf{F}(\mathbf{U})
-= 0
-\]
-
-with conserved state
-
-\[
-\mathbf{U}
-=
-\begin{bmatrix}
-\rho \\
-\rho u \\
-\rho v \\
-E
-\end{bmatrix}
-\]
-
-and an ideal-gas equation of state
-
-\[
-p = (\gamma - 1)
-\left(
-E - \frac{1}{2}\rho(u^2+v^2)
-\right)
-\]
-
-where:
-
-- \(\rho\) — density
-- \(u,v\) — velocity components
-- \(E\) — total energy density
-- \(p\) — pressure
-- \(\gamma\) — ratio of specific heats
-
-The current implementation uses a **Rusanov / local Lax-Friedrichs numerical flux**, with more accurate approximate Riemann solvers planned.
-
----
-
 ## Current Features
 
 ### Solver
@@ -78,19 +33,6 @@ The current implementation uses a **Rusanov / local Lax-Friedrichs numerical flu
 
 An isentropic vortex test is planned to provide a more useful multidimensional accuracy/convergence test.
 
-### Visualisation
-
-The project includes real-time visualisation using:
-
-- OpenGL
-- GLFW
-- GLAD
-- ImGui
-- ImPlot
-- GLM
-
-This allows the state of the simulation to be inspected while the solver is running.
-
 ---
 
 ## Performance
@@ -98,30 +40,6 @@ This allows the state of the simulation to be inspected while the solver is runn
 Performance is a major design goal of the project.
 
 The solver uses a **structure-of-arrays / structure-of-vectors layout** rather than storing complete fluid states as individual structs.
-
-For example, conserved variables are stored conceptually as:
-
-```text
-rho   = [ ... ]
-rho_u = [ ... ]
-rho_v = [ ... ]
-E     = [ ... ]
-```
-
-rather than:
-
-```text
-Cell {
-    rho
-    rho_u
-    rho_v
-    E
-}
-```
-
-This makes sequential processing of individual fields significantly more cache- and SIMD-friendly.
-
-The project also contains a custom aligned `SoV` container used for solver state storage.
 
 ### Current CPU Benchmark
 
@@ -143,128 +61,6 @@ Current optimisation work includes:
 - SIMD-oriented loop restructuring
 
 Manual SIMD intrinsics and wider parallel execution are intended as later optimisation stages.
-
----
-
-## Data Layout
-
-Solver variables are separated into conserved and derived quantities.
-
-### Conserved State
-
-```cpp
-enum class ConservedFields
-{
-    Rho,
-    Rhou,
-    Rhov,
-    E
-};
-```
-
-Corresponding to
-
-\[
-(\rho,\rho u,\rho v,E)
-\]
-
-### Derived State
-
-```cpp
-enum class DerivedFields
-{
-    InvRho,
-    u,
-    v,
-    p,
-    c
-};
-```
-
-where
-
-\[
-c = \sqrt{\frac{\gamma p}{\rho}}
-\]
-
-is the local speed of sound.
-
-Derived quantities are calculated in dedicated loops to keep the main flux kernels simple and to improve opportunities for vectorisation.
-
----
-
-## Mesh Representation
-
-The mesh is represented primarily through contiguous face and cell arrays.
-
-Faces contain or reference information such as:
-
-```text
-LeftCell[]
-RightCell[]
-NormalX[]
-NormalY[]
-InvDl[]
-```
-
-This layout allows a flux kernel to process large batches of faces without repeatedly traversing complex mesh objects.
-
-A typical internal-face update follows the form
-
-\[
-U_L^{n+1}
-=
-U_L^n
--
-\frac{\Delta t}{\Delta l}F^*
-\]
-
-\[
-U_R^{n+1}
-=
-U_R^n
-+
-\frac{\Delta t}{\Delta l}F^*
-\]
-
-where \(F^*\) is the numerical flux through the face.
-
----
-
-## Rusanov Flux
-
-The current numerical flux is the Rusanov flux:
-
-\[
-F^*
-=
-\frac{1}{2}
-\left(
-F(U_L)+F(U_R)
-\right)
--
-\frac{1}{2}
-s_{\max}
-(U_R-U_L)
-\]
-
-with
-
-\[
-s_{\max}
-=
-\max
-\left(
-|u_{n,L}|+c_L,
-|u_{n,R}|+c_R
-\right)
-\]
-
-where \(u_n\) is velocity normal to the face.
-
-Rusanov is relatively diffusive, but its simplicity makes it useful while developing and profiling the underlying solver architecture.
-
-A less diffusive **HLLC solver** is one of the next major numerical additions.
 
 ---
 
@@ -291,11 +87,6 @@ Numerics
  ├── Rusanov solver
  ├── exact Riemann solver
  └── future HLLC solver
-
-Rendering
- ├── OpenGL
- ├── ImGui
- └── ImPlot
 ```
 
 One of the goals is to keep numerical algorithms independent enough from storage and execution backends that alternative implementations can be introduced without redesigning the entire solver.
@@ -357,9 +148,9 @@ The main goals are:
 - [x] Structured 2D mesh
 - [x] Face-based topology
 - [x] Boundary regions
+- [ ] AMR
 - [ ] General unstructured meshes
 - [ ] Mesh import
-- [ ] More complex geometry
 - [ ] Improved mesh preprocessing
 
 ### Performance
@@ -372,113 +163,13 @@ The main goals are:
 - [ ] Multicore CPU execution
 - [ ] Improved thread scaling
 - [ ] CUDA backend
-- [ ] GPU timestep reduction
-- [ ] CPU/GPU performance comparison
-- [ ] Large-mesh benchmarking
-
-### Application
-
-- [x] Real-time OpenGL rendering
-- [x] ImGui integration
-- [x] ImPlot integration
-- [ ] Improved field visualisation
-- [ ] Runtime solver configuration
-- [ ] Mesh loading UI
-- [ ] Simulation statistics/profiling
-- [ ] Result export
-- [ ] More complete standalone CFD application
 
 ---
 
 ## Dependencies
 
 The project is currently developed on Windows using **Visual Studio 2022** and modern C++.
-
-Current external dependencies include:
-
-- GLFW
-- GLAD
-- OpenGL 3.3+
-- GLM
-- Dear ImGui
-- ImPlot
-- stb
-
+It is designed to not rely on any external dependencies, to enable maximum portability. 
 The core numerical solver is written directly in C++ and does not rely on an external CFD framework.
 
 ---
-
-## Development Environment
-
-Current development hardware:
-
-```text
-CPU: AMD Ryzen 5 3600
-GPU: NVIDIA GeForce RTX 2060
-OS:  Windows
-IDE: Visual Studio 2022
-```
-
-The RTX 2060 is intended to be used for the initial CUDA implementation.
-
----
-
-## Why This Project?
-
-A major motivation for the project is understanding what happens below the level of a typical CFD library.
-
-Rather than treating the numerical solver as a black box, the project is intended to explore the entire path from
-
-```text
-Euler equations
-      ↓
-finite-volume discretisation
-      ↓
-Riemann solver
-      ↓
-mesh/data representation
-      ↓
-CPU execution
-      ↓
-SIMD
-      ↓
-multicore execution
-      ↓
-GPU execution
-```
-
-This makes the project as much about **high-performance scientific computing** as CFD itself.
-
----
-
-## Status
-
-This is an experimental project under active development.
-
-The solver is not intended to compete with mature production packages such as OpenFOAM, SU2 or commercial CFD software. Features such as viscous flow, turbulence modelling, robust general-purpose meshing and higher-order schemes are currently outside the implemented feature set.
-
-The immediate focus is building a small, well-understood solver with a strong numerical foundation and then progressively improving its performance and capability.
-
----
-
-## Future Direction
-
-The longer-term aim is to turn the solver into a more complete CFD application supporting:
-
-```text
-Unstructured meshes
-        +
-Higher-order numerics
-        +
-Multicore CPU execution
-        +
-SIMD
-        +
-CUDA
-        +
-Interactive visualisation
-```
-
-while retaining a relatively small and understandable codebase.
-
-The project is intentionally being developed incrementally so that numerical changes and performance changes can be measured independently.
