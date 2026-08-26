@@ -6,16 +6,12 @@
 #include "struct_of_vectors.h"
 #include "mesh.h"
 
-class fluid
+class solver
 {
 public:
     struct config
     {
-        config(const mesh& _mesh, f32 _r, f32 _gamma, f32 _cfl_target) :
-            scene_mesh(_mesh), r(_r), gamma(_gamma), cfl_target(_cfl_target) {
-        }
-
-        const mesh& scene_mesh;
+        mesh scene_mesh;
         f32 r = 1.0f;
         f32 gamma = 1.4f;
         f32 cfl_target = 0.5f;
@@ -46,7 +42,7 @@ public:
         energy,
     };
 
-    fluid(const config& config);
+    solver(const config& config);
 
 
     void time_step();
@@ -83,12 +79,12 @@ private:
 
     const mesh& scene_mesh;
 
-    f32 dt;
-    f32 r;
-    f32 gamma;
-    f32 cfl_target;
+    f32 dt = 0.0f;
+    f32 r = 0.0f;
+    f32 gamma = 0.0f;
+    f32 cfl_target = 0.0f;
 
-    f32 time_elapsed;
+    f32 time_elapsed = 0.0f;
 
     void calculate_derived_states();
     void calculate_time_step();

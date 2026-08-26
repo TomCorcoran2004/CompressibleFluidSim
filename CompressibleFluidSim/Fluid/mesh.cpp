@@ -55,11 +55,12 @@ mesh::mesh(const config& mesh_config) : mesh()
         i32 left_cell_index = position.y * cells.size.x + position.x;
         i32 right_cell_index = left_cell_index + cells.size.x;
 
-        vec2 normal = faces.normal[i];
-
+        faces.normal[i] = vec2(0.0f, 1.0f);
         faces.left_cell[i] = left_cell_index;
         faces.right_cell[i] = right_cell_index;
-        faces.normal[i] = vec2(0.0f, 1.0f);
+        
+        vec2 normal = faces.normal[i];
+
         faces.tangent[i] = vec2(1.0f, 0.0f);
         faces.dl[i] = normal.x * dx + normal.y * dy;
         faces.invdl[i] = 1.0f / faces.dl[i];
@@ -73,12 +74,14 @@ mesh::mesh(const config& mesh_config) : mesh()
 
         i32 left_cell_index = position.y * cells.size.x + position.x;
         i32 right_cell_index = left_cell_index + 1;
-        vec2 normal = faces.normal[i];
 
 
         faces.left_cell[i] = left_cell_index;
         faces.right_cell[i] = right_cell_index;
         faces.normal[i] = vec2(1.0f, 0.0f);
+        
+        vec2 normal = faces.normal[i];
+        
         faces.tangent[i] = vec2(0.0f, 1.0f);
         faces.dl[i] = normal.x * dx + normal.y * dy;
         faces.invdl[i] = 1.0f / faces.dl[i];

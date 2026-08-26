@@ -1,6 +1,6 @@
 #include "solver.h"
 
-fluid::fluid(const config& config) : scene_mesh(config.scene_mesh)
+solver::solver(const config& config) : scene_mesh(config.scene_mesh)
 {
     r = config.r;
     gamma = config.gamma;
@@ -13,7 +13,7 @@ fluid::fluid(const config& config) : scene_mesh(config.scene_mesh)
     derived_states.resize(num_cells, 0.0f);
 }
 
-void fluid::time_step()
+void solver::time_step()
 {
     calculate_derived_states();
     calculate_time_step();
@@ -24,46 +24,46 @@ void fluid::time_step()
 
     calculate_face_flux_transfer();
 
-    conserved_states = std::move(conserved_states_temp);
+    std::swap(conserved_states_temp, conserved_states);
 }
 
-f32 fluid::ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const
+f32 solver::ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const
 {
     return p / (gamma - 1.0f) + 0.5f * rho * (u * u + v * v);
 }
 
-f32 fluid::ideal_gas_law_p(f32 e, f32 rho, f32 u, f32 v) const
+f32 solver::ideal_gas_law_p(f32 e, f32 rho, f32 u, f32 v) const
 {
     return (gamma - 1.0f) * (e - 0.5f * rho * (u * u + v * v));
 }
 
-f32 fluid::cfl_condition(f32 dx, f32 u, f32 a) const
+f32 solver::cfl_condition(f32 dx, f32 u, f32 a) const
 {
     return (cfl_target * dx) / (std::abs(u) + a);
 }
 
-f32 fluid::rusanov(f32 flux_left, f32 flux_right, f32 alpha, f32 conserved_left, f32 conserved_right) const
+f32 solver::rusanov(f32 flux_left, f32 flux_right, f32 alpha, f32 conserved_left, f32 conserved_right) const
 {
     return (flux_left + flux_right) * 0.5f - 0.5f * alpha * (conserved_right - conserved_left);
 }
 
-void fluid::set_rho(i32 cell_idx, f32 val)
+void solver::set_rho(i32 cell_idx, f32 val)
 {
     conserved_states[conserved_fields::rho][cell_idx] = val;
     derived_states[derived_fields::inv_rho][cell_idx] = 1.0f / val;
 }
 
-void fluid::set_u(i32 cell_idx, f32 val)
+void solver::set_u(i32 cell_idx, f32 val)
 {
     conserved_states[conserved_fields::rhou][cell_idx] = val * conserved_states[conserved_fields::rho][cell_idx];
 }
 
-void fluid::set_v(i32 cell_idx, f32 val)
+void solver::set_v(i32 cell_idx, f32 val)
 {
     conserved_states[conserved_fields::rhov][cell_idx] = val * conserved_states[conserved_fields::rho][cell_idx];
 }
 
-void fluid::set_p(i32 cell_idx, f32 val)
+void solver::set_p(i32 cell_idx, f32 val)
 {
     f32 u = conserved_states[conserved_fields::rhou][cell_idx] * derived_states[derived_fields::inv_rho][cell_idx];
     f32 v = conserved_states[conserved_fields::rhov][cell_idx] * derived_states[derived_fields::inv_rho][cell_idx];
@@ -71,63 +71,63 @@ void fluid::set_p(i32 cell_idx, f32 val)
     conserved_states[conserved_fields::e][cell_idx] = ideal_gas_law_e(val, conserved_states[conserved_fields::rho][cell_idx], u, v);
 }
 
-std::span<const f32> fluid::get_rho() const
+std::span<const f32> solver::get_rho() const
 {
     return conserved_states[conserved_fields::rho];
 }
 
-std::span<const f32> fluid::get_rhou() const
+std::span<const f32> solver::get_rhou() const
 {
     return conserved_states[conserved_fields::rhou];
 }
 
-std::span<const f32> fluid::get_rhov() const
+std::span<const f32> solver::get_rhov() const
 {
     return conserved_states[conserved_fields::rhov];
 }
 
-std::span<const f32> fluid::get_e() const
+std::span<const f32> solver::get_e() const
 {
     return conserved_states[conserved_fields::e];
 }
 
-std::span<const f32> fluid::get_rho(i32 start, i32 count) const
+std::span<const f32> solver::get_rho(i32 start, i32 count) const
 {
     return std::span<const f32>(conserved_states[conserved_fields::rho]).subspan(start, count);
 }
 
-std::span<const f32> fluid::get_rhou(i32 start, i32 count) const
+std::span<const f32> solver::get_rhou(i32 start, i32 count) const
 {
     return std::span<const f32>(conserved_states[conserved_fields::rhou]).subspan(start, count);
 }
 
-std::span<const f32> fluid::get_rhov(i32 start, i32 count) const
+std::span<const f32> solver::get_rhov(i32 start, i32 count) const
 {
     return std::span<const f32>(conserved_states[conserved_fields::rhov]).subspan(start, count);
 }
 
-std::span<const f32> fluid::get_e(i32 start, i32 count) const
+std::span<const f32> solver::get_e(i32 start, i32 count) const
 {
     return std::span<const f32>(conserved_states[conserved_fields::e]).subspan(start, count);
 }
 
-f32 fluid::get_gamma() const
+f32 solver::get_gamma() const
 {
     return gamma;
 }
 
-f32 fluid::get_r() const
+f32 solver::get_r() const
 {
     return r;
 }
 
-f32 fluid::get_time_elapsed() const
+f32 solver::get_time_elapsed() const
 {
     return time_elapsed;
 }
 
 //TODO -> MultiThread
-void fluid::calculate_derived_states()
+void solver::calculate_derived_states()
 {
     using enum conserved_fields;
     using enum derived_fields;
@@ -145,7 +145,7 @@ void fluid::calculate_derived_states()
     }
 }
 
-void fluid::calculate_time_step()
+void solver::calculate_time_step()
 {
     using enum derived_fields;
 
@@ -166,7 +166,7 @@ void fluid::calculate_time_step()
     dt = min_time_step;
 }
 
-void fluid::calculate_face_flux_transfer()
+void solver::calculate_face_flux_transfer()
 {
     for (const boundary_region& region : scene_mesh.get_boundary_regions())
     {
@@ -209,7 +209,7 @@ void fluid::calculate_face_flux_transfer()
     }
 }
 
-void fluid::calculate_none_region(const boundary_region& region)
+void solver::calculate_none_region(const boundary_region& region)
 {
     using enum conserved_fields;
     using enum derived_fields;
@@ -266,7 +266,7 @@ void fluid::calculate_none_region(const boundary_region& region)
     }
 }
 
-void fluid::calculate_slip_wall_region(const boundary_region& region)
+void solver::calculate_slip_wall_region(const boundary_region& region)
 {
     using enum conserved_fields;
     using enum derived_fields;
@@ -296,7 +296,7 @@ void fluid::calculate_slip_wall_region(const boundary_region& region)
     }
 }
 
-void fluid::calculate_supersonic_inflow_region(const boundary_region& region) {}
-void fluid::calculate_subsonic_inflow_region(const boundary_region& region) {}
-void fluid::calculate_supersonic_outflow_region(const boundary_region& region) {}
-void fluid::calculate_subsonic_outflow_region(const boundary_region& region) {}
+void solver::calculate_supersonic_inflow_region(const boundary_region& region) {}
+void solver::calculate_subsonic_inflow_region(const boundary_region& region) {}
+void solver::calculate_supersonic_outflow_region(const boundary_region& region) {}
+void solver::calculate_subsonic_outflow_region(const boundary_region& region) {}

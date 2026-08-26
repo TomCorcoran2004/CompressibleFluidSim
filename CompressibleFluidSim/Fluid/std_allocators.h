@@ -15,6 +15,11 @@ namespace allocators
             using other = aligned<U, alignment>;
         };
 
+        aligned() noexcept = default;
+
+        template<typename U>
+        aligned(const aligned<U, alignment>&) noexcept {}
+
         T* allocate(std::size_t n)
         {
             return static_cast<T*>(::operator new(n * sizeof(T), std::align_val_t(alignment)));
