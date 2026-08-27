@@ -30,9 +30,8 @@ The solver is currently under active development.
 - Exact 1D Euler Riemann solver for comparison
 - Newton-Raphson solution of the star-region pressure
 - Shock and rarefaction sampling
-
-An isentropic vortex test is planned to provide a more useful multidimensional accuracy/convergence test.
-
+- 2D vortex in isentropic flow
+  
 ---
 
 ## Performance
@@ -45,7 +44,7 @@ The solver uses a **structure-of-arrays / structure-of-vectors layout** rather t
 
 Recent Rusanov flux microbenchmarks have reached approximately:
 
-> **~70 million face evaluations / second on a single Ryzen 5 3600 core**
+> **~25 million face evaluations / second on a single Ryzen 5 3600 core**
 
 This is a kernel-level performance measurement rather than complete simulation throughput, so it should not be directly compared with end-to-end performance figures from production CFD packages.
 
@@ -137,7 +136,7 @@ The main goals are:
 - [x] Sod shock-tube validation
 - [x] Slip-wall boundary condition
 - [ ] HLLC flux
-- [ ] Isentropic vortex validation
+- [x] Isentropic vortex validation
 - [ ] MUSCL reconstruction
 - [ ] Slope limiters
 - [ ] Second-order time integration
