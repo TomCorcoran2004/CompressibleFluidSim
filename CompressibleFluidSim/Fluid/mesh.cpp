@@ -100,8 +100,8 @@ mesh::mesh(const config& mesh_config) : mesh()
 
         if (i < horizontal_faces_size_flat)
         {
-            cells.bottom_face_idx[left_cell] = i;
-            cells.top_face_idx[right_cell] = i;
+            cells.bottom_face_idx[right_cell] = i;
+            cells.top_face_idx[left_cell] = i;
         }
         else
         {
@@ -168,13 +168,20 @@ void mesh::set_vertically_periodic()
     faces.right_cell.resize(new_faces_size);
     faces.normal.resize(new_faces_size);
     faces.tangent.resize(new_faces_size);
+    faces.dl.resize(new_faces_size);
+    faces.invdl.resize(new_faces_size);
 
     for (i32 i = faces.size, x = 0; i < new_faces_size; ++i, ++x)
     {
+
         faces.left_cell[i] = get_cell_index(ivec2(x, cells.size.y - 1));
         faces.right_cell[i] = get_cell_index(ivec2(x, 0));
         faces.normal[i] = vec2(0.0f, 1.0f);
         faces.tangent[i] = vec2(1.0f, 0.f);
+        
+        vec2 normal = get_normal(i);
+        faces.dl[i] = normal.x * dx + normal.y * dy;
+        faces.invdl[i] = 1.0f / faces.dl[i];
     }
 
     for (i32 x = 0; x < cells.size.x; ++x)
@@ -197,13 +204,20 @@ void mesh::set_horizontally_periodic()
     faces.right_cell.resize(new_faces_size);
     faces.normal.resize(new_faces_size);
     faces.tangent.resize(new_faces_size);
+    faces.dl.resize(new_faces_size);
+    faces.invdl.resize(new_faces_size);
 
     for (i32 i = faces.size, y = 0; i < new_faces_size; ++i, ++y)
     {
+        
         faces.left_cell[i] = get_cell_index(ivec2(cells.size.x - 1, y));
         faces.right_cell[i] = get_cell_index(ivec2(0, y));
         faces.normal[i] = vec2(1.0f, 0.0f);
         faces.tangent[i] = vec2(0.0f, 1.f);
+        
+        vec2 normal = get_normal(i);
+        faces.dl[i] = normal.x * dx + normal.y * dy;
+        faces.invdl[i] = 1.0f / faces.dl[i];
     }
 
     for (i32 y = 0; y < cells.size.y; ++y)
