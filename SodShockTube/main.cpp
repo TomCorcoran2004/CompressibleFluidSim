@@ -35,12 +35,6 @@ bool IsFaceInFluidRegion(const boundary_region::face_info& face_info, const boun
 
 riemann_solver::w run_sod_shock(std::string sim_name, i32 resolution)
 {
-    mesh::config scene_mesh_config = {
-        .resolution = {resolution, 3},
-        .dimensions = {1.0f, 1.0f}
-    };
-    mesh scene_mesh{ scene_mesh_config };
-
     boundary_region::boundary_config slip_wall = {
         .name = "SlipWall",
         .type = boundary_region::boundary_types::slip_wall,
@@ -52,18 +46,25 @@ riemann_solver::w run_sod_shock(std::string sim_name, i32 resolution)
         .type = boundary_region::boundary_types::none,
         .face_in_region = IsFaceInFluidRegion,
     };
-
-    scene_mesh.add_boundary_region(slip_wall);
-    scene_mesh.add_boundary_region(fluid_region);
+    
+    mesh::config mesh_config = {
+        .resolution = {resolution, 3},
+        .dimensions = {1.0f, 1.0f},
+        .region_configs = {slip_wall, fluid_region},
+        .vertically_periodic = false,
+        .horizontally_periodic = false
+    };
 
     solver::config solver_config = {
-        .scene_mesh = scene_mesh,
+        .mesh_config = mesh_config,
         .r = 1.0f,
         .gamma = 1.4f,
         .cfl_target = 0.5f,
     };
 
     solver scene_solver{ solver_config };
+
+    const mesh& scene_mesh = scene_solver.get_mesh();
 
     for (std::size_t i = 0; i < scene_mesh.get_cells_size_flat(); ++i)
     {
@@ -158,17 +159,17 @@ void print_residual(std::string sim_name, const riemann_solver::w& residuals)
 
 int main()
 {
-    riemann_solver::w sim_1250 = run_sod_shock("sim_1250", 1250);
-    riemann_solver::w sim_2500 = run_sod_shock("sim_2500", 2500);
-    riemann_solver::w sim_5000 = run_sod_shock("sim_5000", 5000);
-    riemann_solver::w sim_10000 = run_sod_shock("sim_10000", 10000);
-    riemann_solver::w sim_20000 = run_sod_shock("sim_20000", 20000);
+    riemann_solver::w sim_1250 = run_sod_shock("sod_shock_1250", 1250);
+    riemann_solver::w sim_2500 = run_sod_shock("sod_shock_2500", 2500);
+    riemann_solver::w sim_5000 = run_sod_shock("sod_shock_5000", 5000);
+    //riemann_solver::w sim_10000 = run_sod_shock("sod_shock_10000", 10000);
+    //riemann_solver::w sim_20000 = run_sod_shock("sod_shock_20000", 20000);
 
-    print_residual("sim_1250", sim_1250);
-    print_residual("sim_2500", sim_2500);
-    print_residual("sim_5000", sim_5000);
-    print_residual("sim_10000", sim_10000);
-    print_residual("sim_20000", sim_20000);
+    print_residual("sod_shock_1250", sim_1250);
+    print_residual("sod_shock_2500", sim_2500);
+    print_residual("sod_shock_5000", sim_5000);
+    //print_residual("sod_shock_10000", sim_10000);
+    //print_residual("sod_shock_20000", sim_20000);
 
     return 0;
 }

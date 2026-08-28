@@ -1,4 +1,5 @@
 #include "riemann_solver.h"
+#include <iostream>
 
 riemann_solver::riemann_solver(const config& config) : left(config.left),
 right(config.right),
@@ -244,16 +245,16 @@ riemann_solver::w riemann_solver::evaluate_left_fan(f32 xi)
 
 riemann_solver::w riemann_solver::evaluate_right_fan(f32 xi)
 {
-    const f32 a = std::sqrt((gamma * left.p) / left.rho);
+    const f32 a = std::sqrt((gamma * right.p) / right.rho);
 
-    const f32 rarefaction_factor = 2.0f / (gamma + 1.0f) - (gamma - 1.0f) / ((gamma + 1.0f) * a) * (left.u - xi);
+    const f32 rarefaction_factor = 2.0f / (gamma + 1.0f) - (gamma - 1.0f) / ((gamma + 1.0f) * a) * (right.u - xi);
 
-    const f32 velocity_term = -a + left.u * (gamma - 1.0f) / 2.0f + xi;
+    const f32 velocity_term = -a + right.u * (gamma - 1.0f) / 2.0f + xi;
     const f32 velocity_coef = 2.0f / (gamma + 1.0f);
 
-    const f32 rho = left.rho * std::pow(rarefaction_factor, 2.0f / (gamma - 1.0f));
+    const f32 rho = right.rho * std::pow(rarefaction_factor, 2.0f / (gamma - 1.0f));
     const f32 u = velocity_coef * velocity_term;
-    const f32 p = left.p * std::pow(rarefaction_factor, (2.0f * gamma) / (gamma - 1.0f));
+    const f32 p = right.p * std::pow(rarefaction_factor, (2.0f * gamma) / (gamma - 1.0f));
 
     return w{
         .rho = rho,

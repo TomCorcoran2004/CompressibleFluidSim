@@ -1,5 +1,4 @@
 #include "mesh.h"
-#include <malloc.h>
 #include <vector>
 
 mesh::mesh()
@@ -108,6 +107,14 @@ mesh::mesh(const config& mesh_config) : mesh()
             cells.left_face_idx[right_cell] = i;
             cells.right_face_idx[left_cell] = i;
         }
+    }
+
+    if (mesh_config.horizontally_periodic) set_horizontally_periodic();
+    if (mesh_config.vertically_periodic) set_vertically_periodic();
+    
+    for (const boundary_region::boundary_config& region : mesh_config.region_configs)
+    {
+        add_boundary_region(region);
     }
 }
 

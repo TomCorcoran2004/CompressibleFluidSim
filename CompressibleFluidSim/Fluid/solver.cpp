@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <execution>
 
-solver::solver(const config& config) : scene_mesh(config.scene_mesh)
+solver::solver(const config& config) : scene_mesh(std::move(mesh{config.mesh_config}))
 {
     r = config.r;
     gamma = config.gamma;
@@ -129,7 +129,11 @@ f32 solver::get_time_elapsed() const
     return time_elapsed;
 }
 
-//TODO -> MultiThread
+const mesh& solver::get_mesh() const
+{
+    return scene_mesh;
+}
+
 void solver::calculate_derived_states()
 {
     using enum conserved_fields;

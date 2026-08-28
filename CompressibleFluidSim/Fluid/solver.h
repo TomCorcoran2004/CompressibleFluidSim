@@ -11,7 +11,7 @@ class solver
 public:
     struct config
     {
-        mesh scene_mesh;
+        mesh::config mesh_config;
         f32 r = 1.0f;
         f32 gamma = 1.4f;
         f32 cfl_target = 0.5f;
@@ -44,7 +44,6 @@ public:
 
     solver(const config& config);
 
-
     void time_step();
 
     //Math Helpers
@@ -72,13 +71,15 @@ public:
     f32 get_r() const;
     f32 get_time_elapsed() const;
 
+    const mesh& get_mesh() const;
+
 private:
     sov<f32, conserved_fields, 4, 64> conserved_states;
     sov<f32, conserved_fields, 4, 64> conserved_states_temp;
     sov<f32, derived_fields, 5, 64> derived_states;
     sov<f32, flux_fields, 4, 64> fluxes;
 
-    const mesh& scene_mesh;
+    const mesh scene_mesh;
 
     f32 dt = 0.0f;
     f32 r = 0.0f;

@@ -39,7 +39,7 @@ public:
 
     using is_face_in_region = std::function<bool(const face_info&, const mesh_info&)>;
     const is_face_in_region func;
-
+    //need to fix const func
     struct boundary_config
     {
         std::string name;

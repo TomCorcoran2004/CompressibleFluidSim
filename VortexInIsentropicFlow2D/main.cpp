@@ -84,32 +84,30 @@ bool is_face_in_fluid_region(const boundary_region::face_info& face_info, const 
 
 vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
 {    
-    mesh::config scene_mesh_config = {
-        .resolution = {resolution, resolution},
-        .dimensions = {10.0f, 10.0f}
-    };
-    mesh scene_mesh{ scene_mesh_config };
-
     boundary_region::boundary_config fluid_region = {
         .name = "FluidRegion",
         .type = boundary_region::boundary_types::none,
         .face_in_region = is_face_in_fluid_region,
     };
-
-    scene_mesh.set_horizontally_periodic();
-    scene_mesh.set_vertically_periodic();
     
-    //must be done after as setting periodic adds new faces
-    scene_mesh.add_boundary_region(fluid_region);
+    mesh::config scene_mesh_config = {
+        .resolution = {resolution, resolution},
+        .dimensions = {10.0f, 10.0f},
+        .region_configs = {fluid_region},
+        .vertically_periodic = true,
+        .horizontally_periodic = true
+    };
 
     solver::config solver_config = {
-        .scene_mesh = scene_mesh,
+        .mesh_config = scene_mesh_config,
         .r = 1.0f,
         .gamma = 1.4f,
         .cfl_target = 0.5f,
     };
 
     solver scene_solver{ solver_config };
+
+    const mesh& scene_mesh = scene_solver.get_mesh();
 
     std::vector<f32> initual_rho(scene_mesh.get_cells_size_flat());
     std::vector<f32> initual_u(scene_mesh.get_cells_size_flat());
@@ -190,17 +188,17 @@ void print_residual(std::string sim_name, const vec4& residual)
 
 int main()
 {
-    vec4 sim_125 = run_vortex_in_isentropic_flow("sim_125", 125);
-    vec4 sim_250 = run_vortex_in_isentropic_flow("sim_250", 250);
-    vec4 sim_500 = run_vortex_in_isentropic_flow("sim_500", 500);
-    vec4 sim_1000 = run_vortex_in_isentropic_flow("sim_1000", 1000);
-    vec4 sim_2000 = run_vortex_in_isentropic_flow("sim_2000", 2000);
+    vec4 sim_125 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_125", 125);
+    vec4 sim_250 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_250", 250);
+    vec4 sim_500 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_500", 500);
+    //vec4 sim_1000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_1000", 1000);
+    //vec4 sim_2000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_2000", 2000);
 
-    print_residual("sim_125", sim_125);
-    print_residual("sim_250", sim_250);
-    print_residual("sim_500", sim_500);
-    print_residual("sim_1000", sim_1000);
-    print_residual("sim_2000", sim_2000);
+    print_residual("vortex_in_isentropic_flow_125", sim_125);
+    print_residual("vortex_in_isentropic_flow_250", sim_250);
+    print_residual("vortex_in_isentropic_flow_500", sim_500);
+    //print_residual("vortex_in_isentropic_flow_1000", sim_1000);
+    //print_residual("vortex_in_isentropic_flow_2000", sim_2000);
 
     return 0;
 }

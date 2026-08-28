@@ -56,5 +56,17 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{ce10387b-2cb5-4492-b3e0-83e37e1b7051}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Solver\backend">
+      <UniqueIdentifier>{10f9121b-c76d-497f-b4d9-12397556d5e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solver\backend\cuda">
+      <UniqueIdentifier>{5550f246-0e6e-45aa-9875-508b882e5105}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solver\backend\sequential">
+      <UniqueIdentifier>{1610dd92-84ef-432b-a642-881ff1080755}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Solver\backend\concurrent">
+      <UniqueIdentifier>{ba20fab2-d44a-44e9-b6ea-f3cb4cdf6198}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

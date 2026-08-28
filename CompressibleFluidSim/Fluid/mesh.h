@@ -6,6 +6,7 @@
 #include <string_view>
 #include <string>
 #include <functional>
+#include <vector>
 
 #include "types.h"
 #include "boundary_region.h"
@@ -17,6 +18,9 @@ public:
     {
         ivec2 resolution = ivec2(0, 0);
         vec2 dimensions = vec2(0.0f, 0.0f);
+        std::vector<boundary_region::boundary_config> region_configs;
+        bool vertically_periodic = false;
+        bool horizontally_periodic = false;
     };
 
     // Constructors & Destructors
