@@ -45,6 +45,7 @@ The solver uses a **structure-of-arrays / structure-of-vectors layout** rather t
 Recent Rusanov flux microbenchmarks have reached approximately:
 
 > **~25 million face evaluations / second on a single Ryzen 5 3600 core**
+> **~70 million face evaluations / second when fully multithreaded**
 
 This is a kernel-level performance measurement rather than complete simulation throughput, so it should not be directly compared with end-to-end performance figures from production CFD packages.
 
