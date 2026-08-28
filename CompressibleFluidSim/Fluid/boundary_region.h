@@ -10,6 +10,10 @@ class boundary_region
 {
 public:
 
+    using idx = std::size_t;
+    using mesh_idx = std::size_t;
+    using region_idx = std::size_t;
+
     enum class boundary_types : i32
     {
         none,
@@ -46,13 +50,22 @@ public:
     boundary_region();
     boundary_region(const boundary_config& config);
 
-    void add_face(i32 face_idx);
+    void add_face(mesh_idx face_idx);
 
     std::string_view get_name() const;
-    std::span<const i32> get_faces() const;
+    
+    std::span<const mesh_idx> get_mesh_idxs() const;
+    std::span<const region_idx> get_region_idxs() const;
+    
+    bool contains_face(mesh_idx face_idx) const;
+
     boundary_types get_type() const;
 private:
+    static constexpr idx invalid_idx = std::numeric_limits<idx>::max();
     std::string name;
-    std::vector<i32> faces;
+    
+    std::vector<mesh_idx> mesh_idxs;
+    std::vector<region_idx> region_idxs;
+    
     boundary_types type;
 };

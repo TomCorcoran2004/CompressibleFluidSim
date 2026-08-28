@@ -154,8 +154,6 @@ ivec2 mesh::get_cells_size()   const { return cells.size; }
 i32 mesh::get_cells_size_flat() const { return cells.size_flat; }
 
 std::span<const boundary_region> mesh::get_boundary_regions() const { return boundary_regions; }
-std::span<const i32> mesh::get_faces_in_boundary_region(const std::string& region_name) const { return boundary_regions[get_region_idx(region_name)].get_faces(); }
-std::span<const i32> mesh::get_faces_in_boundary_region(i32 region_idx)                 const { return boundary_regions[region_idx].get_faces(); }
 
 std::string_view mesh::get_region_name(i32 region_idx)        const { return boundary_regions[region_idx].get_name(); }
 i32 mesh::get_region_idx(const std::string& region_name)      const { return boundary_regions_map.at(region_name); }

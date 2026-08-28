@@ -194,13 +194,13 @@ int main()
     vec4 sim_250 = run_vortex_in_isentropic_flow("sim_250", 250);
     vec4 sim_500 = run_vortex_in_isentropic_flow("sim_500", 500);
     vec4 sim_1000 = run_vortex_in_isentropic_flow("sim_1000", 1000);
-    //vec4 sim_2000 = run_vortex_in_isentropic_flow("sim_2000", 2000);
+    vec4 sim_2000 = run_vortex_in_isentropic_flow("sim_2000", 2000);
 
     print_residual("sim_125", sim_125);
     print_residual("sim_250", sim_250);
     print_residual("sim_500", sim_500);
     print_residual("sim_1000", sim_1000);
-    //print_residual("sim_2000", sim_2000);
+    print_residual("sim_2000", sim_2000);
 
     return 0;
 }

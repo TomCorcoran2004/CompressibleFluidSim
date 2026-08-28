@@ -74,8 +74,6 @@ public:
 
 
     // Boundary Info Getters
-    std::span<const i32> get_faces_in_boundary_region(const std::string& region_name) const;
-    std::span<const i32> get_faces_in_boundary_region(i32 region_idx) const;
     std::string_view get_region_name(i32 region_idx) const;
     i32 get_region_idx(const std::string& region_name) const;
     std::span<const boundary_region> get_boundary_regions() const;

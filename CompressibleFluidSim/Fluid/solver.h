@@ -39,7 +39,7 @@ public:
         mass,
         momentum_u,
         momentum_v,
-        energy,
+        e,
     };
 
     solver(const config& config);
@@ -76,6 +76,7 @@ private:
     sov<f32, conserved_fields, 4, 64> conserved_states;
     sov<f32, conserved_fields, 4, 64> conserved_states_temp;
     sov<f32, derived_fields, 5, 64> derived_states;
+    sov<f32, flux_fields, 4, 64> fluxes;
 
     const mesh& scene_mesh;
 
