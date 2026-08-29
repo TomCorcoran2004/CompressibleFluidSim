@@ -56,7 +56,7 @@ public:
     
     std::span<const mesh_idx> get_mesh_idxs() const;
     std::span<const region_idx> get_region_idxs() const;
-    
+
     bool contains_face(mesh_idx face_idx) const;
 
     boundary_types get_type() const;
