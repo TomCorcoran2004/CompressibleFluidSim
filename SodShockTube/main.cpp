@@ -70,15 +70,25 @@ riemann_solver::w run_sod_shock(std::string sim_name, i32 resolution)
     {
         if ((f32)scene_mesh.get_cell_position(i).x / (f32)scene_mesh.get_cells_size().x < 0.5f)
         {
-            scene_solver.set_rho(i, 1.0f);
-            scene_solver.set_u(i, 0.0f);
-            scene_solver.set_p(i, 1.0f);
+            constexpr solver::primitive_state state = {
+                .rho = 1.0f,
+                .u = 0.0f,
+                .v = 0.0f,
+                .p = 1.0f
+            };
+
+            scene_solver.set_primitive_state(i, state);
         }
         else
         {
-            scene_solver.set_rho(i, 0.125f);
-            scene_solver.set_u(i, 0.0f);
-            scene_solver.set_p(i, 0.1f);
+            constexpr solver::primitive_state state = {
+                .rho = 0.125f,
+                .u = 0.0f,
+                .v = 0.0f,
+                .p = 0.1f
+            };
+
+            scene_solver.set_primitive_state(i, state);
         }
     }
 

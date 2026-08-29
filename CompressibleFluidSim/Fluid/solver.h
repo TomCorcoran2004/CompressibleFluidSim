@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
+#include <string>
 
 #include "types.h"
 #include "struct_of_vectors.h"
@@ -42,9 +43,26 @@ public:
         e,
     };
 
+    struct primitive_state
+    {
+        f32 rho;
+        f32 u;
+        f32 v;
+        f32 p;
+    };
+
+    struct conserved_state
+    {
+        f32 rho;
+        f32 rhou;
+        f32 rhov;
+        f32 e;
+    };
+
     solver(const config& config);
 
     void time_step();
+    void write_vti_ascii(const std::string& filepath, const std::string& filename);
 
     //Math Helpers
     f32 ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const;
@@ -52,10 +70,21 @@ public:
     f32 cfl_condition(f32 dx, f32 u, f32 a) const;
     f32 rusanov(f32 flux_left, f32 flux_right, f32 alpha, f32 conserved_left, f32 conserved_right) const;
 
-    void set_rho(i32 cell_idx, f32 val);
-    void set_u(i32 cell_idx, f32 val);
-    void set_v(i32 cell_idx, f32 val);
-    void set_p(i32 cell_idx, f32 val);
+    void set_primitive_state(std::size_t cell_idx, const primitive_state& state);
+    void set_conserved_state(std::size_t cell_idx, const conserved_state& state);
+
+    primitive_state get_primitive_state(std::size_t cell_idx);
+    conserved_state get_conserved_state(std::size_t cell_idx);
+
+    void set_rho(std::size_t cell_idx, f32 val);
+    void set_u(std::size_t cell_idx, f32 val);
+    void set_v(std::size_t cell_idx, f32 val);
+    void set_p(std::size_t cell_idx, f32 val);
+
+    void add_rho(std::size_t cell_idx, f32 val);
+    void add_u(std::size_t cell_idx, f32 val);
+    void add_v(std::size_t cell_idx, f32 val);
+    void add_p(std::size_t cell_idx, f32 val);
 
     std::span<const f32> get_rho() const;
     std::span<const f32> get_rhou() const;

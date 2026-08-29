@@ -2,6 +2,13 @@
 
 #include <algorithm>
 #include <execution>
+#include <fstream>
+#include <span>
+#include <cstddef>
+#include <iomanip>
+#include <limits>
+#include <stdexcept>
+
 
 solver::solver(const config& config) : scene_mesh(std::move(mesh{config.mesh_config}))
 {
@@ -30,6 +37,88 @@ void solver::time_step()
     std::swap(conserved_states_temp, conserved_states);
 }
 
+void solver::write_vti_ascii(const std::string& filepath, const std::string& filename)
+{
+    using enum conserved_fields;
+    using enum derived_fields;
+    
+    const std::size_t num_cels = scene_mesh.get_cells_size_flat();
+    const ivec2 size = scene_mesh.get_cells_size();
+    const f32 dx = scene_mesh.get_dx();
+    const f32 dy = scene_mesh.get_dy();
+
+    std::ofstream file(filepath + filename);
+
+    if (!file)
+    {
+        throw std::runtime_error("Failed to open VTI file");
+    }
+
+    // Enough decimal digits to exactly round-trip a float.
+    file << std::setprecision(std::numeric_limits<f32>::max_digits10);
+
+    file << "<?xml version=\"1.0\"?>\n";
+    file << "<VTKFile type=\"ImageData\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+
+    file << "  <ImageData"
+        << " WholeExtent=\"0 " << size.x
+        << " 0 " << size.y
+        << " 0 0\""
+        << " Origin=\"0 0 0\""
+        << " Spacing=\"" << dx << ' ' << dy << " 1\">\n";
+
+    file << "    <Piece"
+        << " Extent=\"0 " << size.x
+        << " 0 " << size.y
+        << " 0 0\">\n";
+
+    file << "      <PointData/>\n";
+
+    file << "      <CellData Scalars=\"rho\">\n";
+
+    auto write_field = [&file, size](
+        const char* name,
+        std::span<const f32> data)
+        {
+            file << "        <DataArray"
+                << " type=\"Float32\""
+                << " Name=\"" << name << "\""
+                << " NumberOfComponents=\"1\""
+                << " format=\"ascii\">\n";
+
+            file << "          ";
+
+            for (std::size_t i = 0; i < data.size(); ++i)
+            {
+                file << data[i] << ' ';
+
+                if ((i + 1) % size.x == 0 && i + 1 != data.size())
+                {
+                    file << '\n';
+                    file << "          ";
+                }
+            }
+
+            file << '\n';
+            file << "        </DataArray>\n";
+        };
+
+    write_field("rho", conserved_states[rho]);
+    write_field("rhou", conserved_states[rhou]);
+    write_field("rhov", conserved_states[rhov]);
+    write_field("e", conserved_states[e]);
+    write_field("inv_rho", derived_states[inv_rho]);
+    write_field("u", derived_states[u]);
+    write_field("v", derived_states[v]);
+    write_field("p", derived_states[p]);
+    write_field("c", derived_states[c]);
+
+    file << "      </CellData>\n";
+    file << "    </Piece>\n";
+    file << "  </ImageData>\n";
+    file << "</VTKFile>\n";
+}
+
 f32 solver::ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const
 {
     return p / (gamma - 1.0f) + 0.5f * rho * (u * u + v * v);
@@ -50,28 +139,139 @@ f32 solver::rusanov(f32 flux_left, f32 flux_right, f32 alpha, f32 conserved_left
     return (flux_left + flux_right) * 0.5f - 0.5f * alpha * (conserved_right - conserved_left);
 }
 
-void solver::set_rho(i32 cell_idx, f32 val)
+void solver::set_primitive_state(std::size_t cell_idx, const primitive_state& state)
 {
-    conserved_states[conserved_fields::rho][cell_idx] = val;
-    derived_states[derived_fields::inv_rho][cell_idx] = 1.0f / val;
+    const f32 inv_rho = 1.0f / state.rho;
+    const f32 e = ideal_gas_law_e(state.p, state.rho, state.u, state.v);
+    const f32 c = std::sqrt(gamma * state.p * inv_rho);
+
+    conserved_states[conserved_fields::rho][cell_idx] = state.rho;
+    conserved_states[conserved_fields::rhou][cell_idx] = state.rho * state.u;
+    conserved_states[conserved_fields::rhov][cell_idx] = state.rho * state.v;
+    conserved_states[conserved_fields::e][cell_idx] = e;
+
+    derived_states[derived_fields::inv_rho][cell_idx] = inv_rho;
+    derived_states[derived_fields::u][cell_idx] = state.u;
+    derived_states[derived_fields::v][cell_idx] = state.v;
+    derived_states[derived_fields::p][cell_idx] = state.p;
+    derived_states[derived_fields::c][cell_idx] = c;
 }
 
-void solver::set_u(i32 cell_idx, f32 val)
+void solver::set_conserved_state(std::size_t cell_idx, const conserved_state& state)
 {
-    conserved_states[conserved_fields::rhou][cell_idx] = val * conserved_states[conserved_fields::rho][cell_idx];
+    conserved_states[conserved_fields::rho][cell_idx] = state.rho;
+    conserved_states[conserved_fields::rhou][cell_idx] = state.rhou;
+    conserved_states[conserved_fields::rhov][cell_idx] = state.rhov;
+    conserved_states[conserved_fields::e][cell_idx] = state.e;
+    
+    const f32 inv_rho = 1.0f / state.rho;
+    const f32 u = state.rhou * inv_rho;
+    const f32 v = state.rhov * inv_rho;
+    const f32 p = ideal_gas_law_p(state.e, state.rho, u, v);
+
+    
+    derived_states[derived_fields::inv_rho][cell_idx] = inv_rho;
+    derived_states[derived_fields::u][cell_idx] = u * inv_rho;
+    derived_states[derived_fields::v][cell_idx] = v;
+    derived_states[derived_fields::p][cell_idx] = p;
+    derived_states[derived_fields::c][cell_idx] = std::sqrt(gamma * p * inv_rho);
 }
 
-void solver::set_v(i32 cell_idx, f32 val)
+solver::primitive_state solver::get_primitive_state(std::size_t cell_idx)
 {
-    conserved_states[conserved_fields::rhov][cell_idx] = val * conserved_states[conserved_fields::rho][cell_idx];
+    using enum conserved_fields;
+    using enum derived_fields;
+
+    return primitive_state{
+        .rho = conserved_states[rho][cell_idx],
+        .u = derived_states[u][cell_idx],
+        .v = derived_states[v][cell_idx],
+        .p = derived_states[p][cell_idx],
+    };
 }
 
-void solver::set_p(i32 cell_idx, f32 val)
+solver::conserved_state solver::get_conserved_state(std::size_t cell_idx)
 {
-    f32 u = conserved_states[conserved_fields::rhou][cell_idx] * derived_states[derived_fields::inv_rho][cell_idx];
-    f32 v = conserved_states[conserved_fields::rhov][cell_idx] * derived_states[derived_fields::inv_rho][cell_idx];
+    using enum conserved_fields;
 
-    conserved_states[conserved_fields::e][cell_idx] = ideal_gas_law_e(val, conserved_states[conserved_fields::rho][cell_idx], u, v);
+    return conserved_state{
+        .rho = conserved_states[rho][cell_idx],
+        .rhou = conserved_states[rhou][cell_idx],
+        .rhov = conserved_states[rhov][cell_idx],
+        .e = conserved_states[e][cell_idx],
+    };
+}
+
+void solver::set_rho(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.rho = val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::set_u(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.u = +val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::set_v(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.v = val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::set_p(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.p = val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::add_rho(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.rho += val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::add_u(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.u += val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::add_v(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.v += val;
+
+    set_primitive_state(cell_idx, state);
+}
+
+void solver::add_p(std::size_t cell_idx, f32 val)
+{
+    primitive_state state = get_primitive_state(cell_idx);
+
+    state.p += val;
+
+    set_primitive_state(cell_idx, state);
 }
 
 std::span<const f32> solver::get_rho() const

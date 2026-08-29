@@ -5,6 +5,8 @@
 #include <solver.h>
 #include <riemann_solver.h>
 
+const std::string file_path = { "C:\\Users\\TomCo\\Desktop\\SimOutput\\" };
+
 constexpr f32 vortex_strength = 5.0f;
 constexpr f32 horizontal_flow_speed = 1.0f;
 constexpr f32 vertical_flow_speed = 1.0f;
@@ -120,22 +122,23 @@ vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
         f32 x = ((f32)cell_coords.x + 0.5f) * scene_mesh.get_dx();
         f32 y = ((f32)cell_coords.y + 0.5f)* scene_mesh.get_dy();
 
-        f32 rho = calculate_rho(x, y);
-        f32 u = calculate_u(x, y);
-        f32 v = calculate_v(x, y);
-        f32 p = calculate_p(x, y);
+        solver::primitive_state state = {
+            .rho = calculate_rho(x, y),
+            .u = calculate_u(x, y),
+            .v = calculate_v(x, y),
+            .p = calculate_p(x, y)
+        };
 
-        initual_rho[i] = rho;
-        initual_u[i] = u;
-        initual_v[i] = v;
-        initual_p[i] = p;
+        initual_rho[i] = state.rho;
+        initual_u[i] = state.u;
+        initual_v[i] = state.v;
+        initual_p[i] = state.p;
 
-        scene_solver.set_rho(i, rho);
-        scene_solver.set_u(i, u);
-        scene_solver.set_v(i, v);
-        scene_solver.set_p(i, p);
+        scene_solver.set_primitive_state(i, state);
     }
 
+    scene_solver.write_vti_ascii(file_path, "Test.vti");
+    
     while (scene_solver.get_time_elapsed() < 10.0f)
     {
         f32 percentage_complete = 100.f * scene_solver.get_time_elapsed() / 10.0f;
@@ -143,6 +146,8 @@ vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
         scene_solver.time_step();
     }
 
+    scene_solver.write_vti_ascii("C:\\Users\\TomCo\\Desktop\\SimOutput\\", "Test2.vti");
+    
     std::span<const f32> scene_rho = scene_solver.get_rho();
     std::span<const f32> scene_rhou = scene_solver.get_rhou();
     std::span<const f32> scene_rhov = scene_solver.get_rhov();
@@ -188,14 +193,14 @@ void print_residual(std::string sim_name, const vec4& residual)
 
 int main()
 {
-    vec4 sim_125 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_125", 125);
-    vec4 sim_250 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_250", 250);
+    //vec4 sim_125 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_125", 125);
+    //vec4 sim_250 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_250", 250);
     vec4 sim_500 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_500", 500);
     //vec4 sim_1000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_1000", 1000);
     //vec4 sim_2000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_2000", 2000);
 
-    print_residual("vortex_in_isentropic_flow_125", sim_125);
-    print_residual("vortex_in_isentropic_flow_250", sim_250);
+    //print_residual("vortex_in_isentropic_flow_125", sim_125);
+    //print_residual("vortex_in_isentropic_flow_250", sim_250);
     print_residual("vortex_in_isentropic_flow_500", sim_500);
     //print_residual("vortex_in_isentropic_flow_1000", sim_1000);
     //print_residual("vortex_in_isentropic_flow_2000", sim_2000);
