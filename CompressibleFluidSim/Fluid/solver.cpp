@@ -119,6 +119,106 @@ void solver::write_vti_ascii(const std::string& filepath, const std::string& fil
     file << "</VTKFile>\n";
 }
 
+void solver::write_vti_binary(const std::string& filepath, const std::string& filename)
+{
+    using enum conserved_fields;
+    using enum derived_fields;
+
+    const std::size_t num_cells = scene_mesh.get_cells_size_flat();
+    const ivec2 size = scene_mesh.get_cells_size();
+    const f32 dx = scene_mesh.get_dx();
+    const f32 dy = scene_mesh.get_dy();
+
+    std::ofstream file(filepath + filename, std::ios::binary);
+
+    if (!file)
+    {
+        throw std::runtime_error("Failed to open VTI file");
+    }
+
+    struct field
+    {
+        const char* name;
+        std::span<const f32> data;
+    };
+
+    const std::array<field, 9> fields = {
+        field{"rho", conserved_states[rho]},
+        field{"rhou", conserved_states[rhou]},
+        field{"rhov", conserved_states[rhov]},
+        field{"e", conserved_states[e]},
+        field{"inv_rho", derived_states[inv_rho]},
+        field{"u", derived_states[u]},
+        field{"v", derived_states[v]},
+        field{"p", derived_states[p]},
+        field{"c", derived_states[c]}
+    };
+
+    file << "<?xml version=\"1.0\"?>\n";
+    file << "<VTKFile"
+        << " type=\"ImageData\""
+        << " version=\"0.1\""
+        << " byte_order=\"LittleEndian\""
+        << " header_type=\"UInt64\">\n";
+
+    file << "  <ImageData"
+        << " WholeExtent=\"0 " << size.x
+        << " 0 " << size.y
+        << " 0 0\""
+        << " Origin=\"0 0 0\""
+        << " Spacing=\"" << dx << ' ' << dy << " 1\">\n";
+
+    file << "    <Piece"
+        << " Extent=\"0 " << size.x
+        << " 0 " << size.y
+        << " 0 0\">\n";
+
+    file << "      <PointData/>\n";
+    file << "      <CellData Scalars=\"rho\">\n";
+
+    std::uint64_t offset = 0;
+
+    for (const field& field : fields)
+    {
+        file << "        <DataArray"
+            << " type=\"Float32\""
+            << " Name=\"" << field.name << "\""
+            << " NumberOfComponents=\"1\""
+            << " format=\"appended\""
+            << " offset=\"" << offset << "\"/>\n";
+
+        const std::uint64_t data_size =
+            static_cast<std::uint64_t>(field.data.size() * sizeof(f32));
+
+        offset += sizeof(std::uint64_t) + data_size;
+    }
+
+    file << "      </CellData>\n";
+    file << "    </Piece>\n";
+    file << "  </ImageData>\n";
+
+    file << "  <AppendedData encoding=\"raw\">\n_";
+
+    for (const field& field : fields)
+    {
+        const std::uint64_t data_size =
+            static_cast<std::uint64_t>(field.data.size() * sizeof(f32));
+
+        file.write(
+            reinterpret_cast<const char*>(&data_size),
+            sizeof(data_size)
+        );
+
+        file.write(
+            reinterpret_cast<const char*>(field.data.data()),
+            static_cast<std::streamsize>(data_size)
+        );
+    }
+
+    file << "\n  </AppendedData>\n";
+    file << "</VTKFile>\n";
+}
+
 f32 solver::ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const
 {
     return p / (gamma - 1.0f) + 0.5f * rho * (u * u + v * v);

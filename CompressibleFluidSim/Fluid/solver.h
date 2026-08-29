@@ -63,6 +63,7 @@ public:
 
     void time_step();
     void write_vti_ascii(const std::string& filepath, const std::string& filename);
+    void write_vti_binary(const std::string& filepath, const std::string& filename);
 
     //Math Helpers
     f32 ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const;

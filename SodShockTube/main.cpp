@@ -172,14 +172,14 @@ int main()
     riemann_solver::w sim_1250 = run_sod_shock("sod_shock_1250", 1250);
     riemann_solver::w sim_2500 = run_sod_shock("sod_shock_2500", 2500);
     riemann_solver::w sim_5000 = run_sod_shock("sod_shock_5000", 5000);
-    //riemann_solver::w sim_10000 = run_sod_shock("sod_shock_10000", 10000);
-    //riemann_solver::w sim_20000 = run_sod_shock("sod_shock_20000", 20000);
+    riemann_solver::w sim_10000 = run_sod_shock("sod_shock_10000", 10000);
+    riemann_solver::w sim_20000 = run_sod_shock("sod_shock_20000", 20000);
 
     print_residual("sod_shock_1250", sim_1250);
     print_residual("sod_shock_2500", sim_2500);
     print_residual("sod_shock_5000", sim_5000);
-    //print_residual("sod_shock_10000", sim_10000);
-    //print_residual("sod_shock_20000", sim_20000);
+    print_residual("sod_shock_10000", sim_10000);
+    print_residual("sod_shock_20000", sim_20000);
 
     return 0;
 }

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <format>
 
 #include <mesh.h>
 #include <boundary_region.h>
@@ -137,17 +138,22 @@ vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
         scene_solver.set_primitive_state(i, state);
     }
 
-    scene_solver.write_vti_ascii(file_path, "Test.vti");
-    
+
+    //std::size_t num_ticks = 0;
+
     while (scene_solver.get_time_elapsed() < 10.0f)
     {
+        //std::string filename = sim_name + std::format("_frame_{:06}.vti", num_ticks);
+        //scene_solver.write_vti_binary(file_path, filename);
+
         f32 percentage_complete = 100.f * scene_solver.get_time_elapsed() / 10.0f;
         std::cout << sim_name << " Is Percentage Complete: " << percentage_complete << "%\n";
+        
         scene_solver.time_step();
+        
+        //++num_ticks;
     }
 
-    scene_solver.write_vti_ascii("C:\\Users\\TomCo\\Desktop\\SimOutput\\", "Test2.vti");
-    
     std::span<const f32> scene_rho = scene_solver.get_rho();
     std::span<const f32> scene_rhou = scene_solver.get_rhou();
     std::span<const f32> scene_rhov = scene_solver.get_rhov();
@@ -193,17 +199,17 @@ void print_residual(std::string sim_name, const vec4& residual)
 
 int main()
 {
-    //vec4 sim_125 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_125", 125);
-    //vec4 sim_250 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_250", 250);
+    vec4 sim_125 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_125", 125);
+    vec4 sim_250 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_250", 250);
     vec4 sim_500 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_500", 500);
-    //vec4 sim_1000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_1000", 1000);
-    //vec4 sim_2000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_2000", 2000);
+    vec4 sim_1000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_1000", 1000);
+    vec4 sim_2000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_2000", 2000);
 
-    //print_residual("vortex_in_isentropic_flow_125", sim_125);
-    //print_residual("vortex_in_isentropic_flow_250", sim_250);
+    print_residual("vortex_in_isentropic_flow_125", sim_125);
+    print_residual("vortex_in_isentropic_flow_250", sim_250);
     print_residual("vortex_in_isentropic_flow_500", sim_500);
-    //print_residual("vortex_in_isentropic_flow_1000", sim_1000);
-    //print_residual("vortex_in_isentropic_flow_2000", sim_2000);
+    print_residual("vortex_in_isentropic_flow_1000", sim_1000);
+    print_residual("vortex_in_isentropic_flow_2000", sim_2000);
 
     return 0;
 }
