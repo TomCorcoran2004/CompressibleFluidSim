@@ -31,6 +31,7 @@ The solver is currently under active development.
 - Newton-Raphson solution of the star-region pressure
 - Shock and rarefaction sampling
 - 2D vortex in isentropic flow
+- 2D Quadrant Sod Shock
   
 ---
 
