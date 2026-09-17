@@ -124,7 +124,7 @@ void solver::calculate_time_step()
         _device_lambda.data()
     );
 
-    calculate_time_step_kernel << <1, 1 >> > (
+    calculate_time_step_kernel<<<1, 1 >>>(
         _device_lambda.data(),
         _device_dt.data(),
         _device_time_elapsed.data(),

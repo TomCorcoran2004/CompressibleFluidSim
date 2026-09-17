@@ -1,11 +1,11 @@
 #include <iostream>
 #include <format>
 
-#include <mesh.h>
-#include <boundary_region.h>
-#include <solver.h>
-#include <riemann_solver.h>
-#include <mesh_structs.h>
+#include <CompressibleFluidSim/Fluid/mesh/mesh_structs.h>
+#include <CompressibleFluidSim/Fluid/mesh/mesh.h>
+#include <CompressibleFluidSim/Fluid/mesh/boundary_regions/boundary_region.h>
+#include <CompressibleFluidSim/Fluid/solver/solver.h>
+#include <CompressibleFluidSim/Fluid/solver/riemann_solver.h>
 
 const std::string file_path = { "C:\\Users\\TomCo\\Desktop\\SimOutput\\" };
 
@@ -83,7 +83,7 @@ f32 calculate_p(f32 x, f32 y)
 
 bool is_face_in_fluid_region(const mesh_structs::face_info& face_info, const mesh_structs::mesh_info& mesh_info)
 {
-    return true;;
+    return true;
 }
 
 vec4 run_vortex_in_isentropic_flow(std::string sim_name, std::size_t resolution)

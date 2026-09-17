@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include <mesh.h>
-#include <boundary_region.h>
-#include <solver.h>
-#include <riemann_solver.h>
-#include <mesh_structs.h>
+#include <CompressibleFluidSim/Fluid/mesh/mesh_structs.h>
+#include <CompressibleFluidSim/Fluid/mesh/mesh.h>
+#include <CompressibleFluidSim/Fluid/mesh/boundary_regions/boundary_region.h>
+#include <CompressibleFluidSim/Fluid/solver/solver.h>
+#include <CompressibleFluidSim/Fluid/solver/riemann_solver.h>
 
 bool IsFaceInEdgeRegion(const mesh_structs::face_info& face_info, const mesh_structs::mesh_info& mesh_info)
 {

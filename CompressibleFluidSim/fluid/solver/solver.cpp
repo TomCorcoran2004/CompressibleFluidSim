@@ -212,7 +212,6 @@ void solver::calculate_face_flux_transfer()
     }
 }
 
-
 void solver::calculate_supersonic_inflow_region(const boundary_region& region) {}
 void solver::calculate_subsonic_inflow_region(const boundary_region& region) {}
 void solver::calculate_supersonic_outflow_region(const boundary_region& region) {}

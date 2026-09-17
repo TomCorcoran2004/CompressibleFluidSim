@@ -169,7 +169,7 @@ void gpu_buffer<T>::upload(const T* src, std::size_t count)
 template<typename T>
 void gpu_buffer<T>::download(T* dst) const
 {
-    cudaMemcpy(dst, _data, _size * sizeof(T), cudaMemcpyDeviceToHost);
+    auto error = cudaMemcpy(dst, _data, _size * sizeof(T), cudaMemcpyDeviceToHost);
 }
 
 template<typename T>
