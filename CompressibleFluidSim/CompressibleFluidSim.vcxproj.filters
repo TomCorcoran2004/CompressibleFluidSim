@@ -1,43 +1,58 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Fluid\mesh.cpp">
+    <ClCompile Include="fluid\mesh\mesh.cpp">
       <Filter>Mesh</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\solver.cpp">
+    <ClCompile Include="fluid\solver\solver.cpp">
       <Filter>Solver</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\boundary_region.cpp">
+    <ClCompile Include="fluid\mesh\boundary_regions\boundary_region.cpp">
       <Filter>BoundaryRegions</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\riemann_solver.cpp">
+    <ClCompile Include="fluid\solver\riemann_solver.cpp">
       <Filter>Solver\RiemannSolver</Filter>
     </ClCompile>
-    <ClCompile Include="Fluid\riemann_solver_unit_tests.cpp">
+    <ClCompile Include="fluid\solver\riemann_solver_unit_tests.cpp">
       <Filter>Solver\RiemannSolver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Fluid\mesh.h">
+    <ClInclude Include="fluid\mesh\mesh.h">
       <Filter>Mesh</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\solver.h">
+    <ClInclude Include="fluid\solver\solver.h">
       <Filter>Solver</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\boundary_region.h">
+    <ClInclude Include="fluid\mesh\boundary_regions\boundary_region.h">
       <Filter>BoundaryRegions</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\riemann_solver.h">
+    <ClInclude Include="fluid\solver\riemann_solver.h">
       <Filter>Solver\RiemannSolver</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\std_allocators.h">
+    <ClInclude Include="fluid\utils\std_allocators.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\struct_of_vectors.h">
+    <ClInclude Include="fluid\utils\struct_of_vectors.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Fluid\types.h">
+    <ClInclude Include="fluid\utils\types.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="fluid\utils\gpu_buffer.h">
+      <Filter>Solver\cuda_backend</Filter>
+    </ClInclude>
+    <ClInclude Include="fluid\utils\gpu_struct_of_arrays.h">
+      <Filter>Solver\cuda_backend</Filter>
+    </ClInclude>
+    <ClInclude Include="fluid\mesh\mesh_structs.h">
+      <Filter>Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="fluid\utils\cuda_utils.cuh">
+      <Filter>Solver\cuda_backend</Filter>
+    </ClInclude>
+    <ClInclude Include="fluid\mesh\boundary_regions\region_structs.h">
+      <Filter>BoundaryRegions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -56,17 +71,13 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{ce10387b-2cb5-4492-b3e0-83e37e1b7051}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Solver\backend">
-      <UniqueIdentifier>{10f9121b-c76d-497f-b4d9-12397556d5e6}</UniqueIdentifier>
+    <Filter Include="Solver\cuda_backend">
+      <UniqueIdentifier>{89e543d5-ddb2-40af-bfd5-b55d61f7ec49}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Solver\backend\cuda">
-      <UniqueIdentifier>{5550f246-0e6e-45aa-9875-508b882e5105}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Solver\backend\sequential">
-      <UniqueIdentifier>{1610dd92-84ef-432b-a642-881ff1080755}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Solver\backend\concurrent">
-      <UniqueIdentifier>{ba20fab2-d44a-44e9-b6ea-f3cb4cdf6198}</UniqueIdentifier>
-    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="fluid\solver\kernels.cu">
+      <Filter>Solver\cuda_backend</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

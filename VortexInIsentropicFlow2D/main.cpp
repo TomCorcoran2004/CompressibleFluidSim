@@ -5,6 +5,7 @@
 #include <boundary_region.h>
 #include <solver.h>
 #include <riemann_solver.h>
+#include <mesh_structs.h>
 
 const std::string file_path = { "C:\\Users\\TomCo\\Desktop\\SimOutput\\" };
 
@@ -80,25 +81,24 @@ f32 calculate_p(f32 x, f32 y)
     return base_pressure * std::pow(temperature, exponent);
 }
 
-bool is_face_in_fluid_region(const boundary_region::face_info& face_info, const boundary_region::mesh_info& mesh_info)
+bool is_face_in_fluid_region(const mesh_structs::face_info& face_info, const mesh_structs::mesh_info& mesh_info)
 {
     return true;;
 }
 
-vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
+vec4 run_vortex_in_isentropic_flow(std::string sim_name, std::size_t resolution)
 {    
-    boundary_region::boundary_config fluid_region = {
-        .name = "FluidRegion",
-        .type = boundary_region::boundary_types::none,
+    mesh_structs::boundary_config fluid_region = {
+        .type = region_structs::types::none,
         .face_in_region = is_face_in_fluid_region,
     };
     
-    mesh::config scene_mesh_config = {
+    mesh_structs::config scene_mesh_config = {
         .resolution = {resolution, resolution},
         .dimensions = {10.0f, 10.0f},
-        .region_configs = {fluid_region},
         .vertically_periodic = true,
-        .horizontally_periodic = true
+        .horizontally_periodic = true,
+        .region_configs = {fluid_region}
     };
 
     solver::config solver_config = {
@@ -106,20 +106,21 @@ vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
         .r = 1.0f,
         .gamma = 1.4f,
         .cfl_target = 0.5f,
+        .scene_time = 10.0f,
     };
 
     solver scene_solver{ solver_config };
 
     const mesh& scene_mesh = scene_solver.get_mesh();
 
-    std::vector<f32> initual_rho(scene_mesh.get_cells_size_flat());
-    std::vector<f32> initual_u(scene_mesh.get_cells_size_flat());
-    std::vector<f32> initual_v(scene_mesh.get_cells_size_flat());
-    std::vector<f32> initual_p(scene_mesh.get_cells_size_flat());
+    std::vector<f32> initual_rho(scene_mesh.cells_size_flat());
+    std::vector<f32> initual_u(scene_mesh.cells_size_flat());
+    std::vector<f32> initual_v(scene_mesh.cells_size_flat());
+    std::vector<f32> initual_p(scene_mesh.cells_size_flat());
 
-    for (std::size_t i = 0; i < scene_mesh.get_cells_size_flat(); ++i)
+    for (std::size_t i = 0; i < scene_mesh.cells_size_flat(); ++i)
     {
-        ivec2 cell_coords = scene_mesh.get_cell_position(i);
+        u64vec2 cell_coords = scene_mesh.get_cell_position(i);
         f32 x = ((f32)cell_coords.x + 0.5f) * scene_mesh.get_dx();
         f32 y = ((f32)cell_coords.y + 0.5f)* scene_mesh.get_dy();
 
@@ -138,26 +139,26 @@ vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
         scene_solver.set_primitive_state(i, state);
     }
 
-
-    //std::size_t num_ticks = 0;
-
-    while (scene_solver.get_time_elapsed() < 10.0f)
+   
+    std::size_t num_ticks = 0;
+    f32 time_elapsed = 0.0f;
+    while (time_elapsed < scene_solver.total_time())
     {
-        //std::string filename = sim_name + std::format("_frame_{:06}.vti", num_ticks);
-        //scene_solver.write_vti_binary(file_path, filename);
-
-        f32 percentage_complete = 100.f * scene_solver.get_time_elapsed() / 10.0f;
-        std::cout << sim_name << " Is Percentage Complete: " << percentage_complete << "%\n";
-        
+        if (num_ticks % 20 == 0)
+        {
+            time_elapsed = scene_solver.time_elapsed();
+            f32 percentage_complete = 100.f * time_elapsed / scene_solver.total_time();
+            std::cout << sim_name << " Is Percentage Complete: " << percentage_complete << "%\n";
+        }
+   
         scene_solver.time_step();
-        
-        //++num_ticks;
+        ++num_ticks;
     }
 
-    std::span<const f32> scene_rho = scene_solver.get_rho();
-    std::span<const f32> scene_rhou = scene_solver.get_rhou();
-    std::span<const f32> scene_rhov = scene_solver.get_rhov();
-    std::span<const f32> scene_e = scene_solver.get_e();
+    std::vector<f32> scene_rho = scene_solver.get_rho();
+    std::vector<f32> scene_rhou = scene_solver.get_rhou();
+    std::vector<f32> scene_rhov = scene_solver.get_rhov();
+    std::vector<f32> scene_e = scene_solver.get_e();
 
     std::vector<f32> scene_u(scene_rho.size());
     std::vector<f32> scene_v(scene_rho.size());
@@ -168,16 +169,16 @@ vec4 run_vortex_in_isentropic_flow(std::string sim_name, i32 resolution)
     
     vec4 residuals = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-    for (i32 i = 0; i < scene_mesh.get_cells_size_flat(); ++i)
+    for (i32 i = 0; i < scene_mesh.cells_size_flat(); ++i)
     {
         scene_u[i] = scene_rhou[i] / scene_rho[i];
         scene_v[i] = scene_rhov[i] / scene_rho[i];
         scene_p[i] = scene_solver.ideal_gas_law_p(scene_e[i], scene_rho[i], scene_u[i], scene_v[i]);
     }
 
-    for (std::size_t i = 0; i < scene_mesh.get_cells_size_flat(); ++i)
+    for (std::size_t i = 0; i < scene_mesh.cells_size_flat(); ++i)
     {
-        ivec2 cell_coords = scene_mesh.get_cell_position(i);
+        u64vec2 cell_coords = scene_mesh.get_cell_position(i);
 
         residuals.x += dx * dy * std::abs(scene_rho[i] - initual_rho[i]);
         residuals.y += dx * dy * std::abs(scene_u[i] - initual_u[i]);
@@ -203,13 +204,13 @@ int main()
     vec4 sim_250 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_250", 250);
     vec4 sim_500 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_500", 500);
     vec4 sim_1000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_1000", 1000);
-    vec4 sim_2000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_2000", 2000);
+    //vec4 sim_2000 = run_vortex_in_isentropic_flow("vortex_in_isentropic_flow_2000", 2000);
 
     print_residual("vortex_in_isentropic_flow_125", sim_125);
     print_residual("vortex_in_isentropic_flow_250", sim_250);
     print_residual("vortex_in_isentropic_flow_500", sim_500);
     print_residual("vortex_in_isentropic_flow_1000", sim_1000);
-    print_residual("vortex_in_isentropic_flow_2000", sim_2000);
+    //print_residual("vortex_in_isentropic_flow_2000", sim_2000);
 
     return 0;
 }

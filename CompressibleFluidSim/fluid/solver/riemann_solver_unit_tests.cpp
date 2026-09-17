@@ -1,5 +1,5 @@
-#include "riemann_solver.h"
-#include "types.h"
+#include "CompressibleFluidSim/fluid/solver/riemann_solver.h"
+#include "CompressibleFluidSim/fluid/utils/types.h"
 #include <iostream>
 
 bool epsilon_not_equal(f32 a, f32 b, f32 tol)

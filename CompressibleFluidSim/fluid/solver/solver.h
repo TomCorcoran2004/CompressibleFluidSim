@@ -3,19 +3,21 @@
 #include <memory>
 #include <string>
 
-#include "types.h"
-#include "struct_of_vectors.h"
-#include "mesh.h"
+#include "CompressibleFluidSim/fluid/utils/types.h"
+#include "CompressibleFluidSim/fluid/utils/gpu_struct_of_arrays.h"
+#include "CompressibleFluidSim/fluid/utils/struct_of_vectors.h"
+#include "CompressibleFluidSim/fluid/mesh/mesh.h"
 
 class solver
 {
 public:
     struct config
     {
-        mesh::config mesh_config;
+        mesh_structs::config mesh_config;
         f32 r = 1.0f;
         f32 gamma = 1.4f;
         f32 cfl_target = 0.5f;
+        f32 scene_time = 0.0f;
     };
 
     enum class conserved_fields : std::size_t
@@ -62,9 +64,7 @@ public:
     solver(const config& config);
 
     void time_step();
-    void write_vti_ascii(const std::string& filepath, const std::string& filename);
-    void write_vti_binary(const std::string& filepath, const std::string& filename);
-
+    
     //Math Helpers
     f32 ideal_gas_law_e(f32 p, f32 rho, f32 u, f32 v) const;
     f32 ideal_gas_law_p(f32 e, f32 rho, f32 u, f32 v) const;
@@ -74,49 +74,48 @@ public:
     void set_primitive_state(std::size_t cell_idx, const primitive_state& state);
     void set_conserved_state(std::size_t cell_idx, const conserved_state& state);
 
-    primitive_state get_primitive_state(std::size_t cell_idx);
-    conserved_state get_conserved_state(std::size_t cell_idx);
-
-    void set_rho(std::size_t cell_idx, f32 val);
-    void set_u(std::size_t cell_idx, f32 val);
-    void set_v(std::size_t cell_idx, f32 val);
-    void set_p(std::size_t cell_idx, f32 val);
-
-    void add_rho(std::size_t cell_idx, f32 val);
-    void add_u(std::size_t cell_idx, f32 val);
-    void add_v(std::size_t cell_idx, f32 val);
-    void add_p(std::size_t cell_idx, f32 val);
-
-    std::span<const f32> get_rho() const;
-    std::span<const f32> get_rhou() const;
-    std::span<const f32> get_rhov() const;
-    std::span<const f32> get_e() const;
-
-    std::span<const f32> get_rho(i32 start, i32 count) const;
-    std::span<const f32> get_rhou(i32 start, i32 count) const;
-    std::span<const f32> get_rhov(i32 start, i32 count) const;
-    std::span<const f32> get_e(i32 start, i32 count) const;
+    std::vector<f32> get_rho() const;
+    std::vector<f32> get_rhou() const;
+    std::vector<f32> get_rhov() const;
+    std::vector<f32> get_e() const;
 
     f32 get_gamma() const;
     f32 get_r() const;
-    f32 get_time_elapsed() const;
+
+    //gets the total time the scene has been running for, causes a copy from the gpu, so is slow.
+    f32 time_elapsed() const;
+    f32 total_time() const;
 
     const mesh& get_mesh() const;
 
 private:
     sov<f32, conserved_fields, 4, 64> conserved_states;
-    sov<f32, conserved_fields, 4, 64> conserved_states_temp;
-    sov<f32, derived_fields, 5, 64> derived_states;
-    sov<f32, flux_fields, 4, 64> fluxes;
+    //sov<f32, conserved_fields, 4, 64> conserved_states_temp;
+    //sov<f32, derived_fields, 5, 64> derived_states;
+    //sov<f32, flux_fields, 4, 64> fluxes; -> move to gpu buffer only
 
-    const mesh scene_mesh;
+    gpu_struct_of_arrays<f32, conserved_fields, 4> device_conserved_states;
+    gpu_struct_of_arrays<f32, conserved_fields, 4> device_conserved_states_temp;
+    gpu_struct_of_arrays<f32, derived_fields, 5> device_derived_states;
+    gpu_struct_of_arrays<f32, flux_fields, 4> device_fluxes;
+    
+    gpu_buffer<f32> _device_dt;
+    gpu_buffer<f32> _device_time_elapsed;
+    gpu_buffer<f32> _device_lambda;
+    gpu_buffer<f32> _device_total_time;
 
-    f32 dt = 0.0f;
+    f32 _host_total_time = 0.0f;
+
+    bool moved_to_device = false;
+
+    const mesh mesh;
+
     f32 r = 0.0f;
     f32 gamma = 0.0f;
     f32 cfl_target = 0.0f;
 
-    f32 time_elapsed = 0.0f;
+
+    void move_to_device();
 
     void calculate_derived_states();
     void calculate_time_step();

@@ -7,7 +7,7 @@
 #include <utility>
 #include <stdexcept>
 
-#include "std_allocators.h"
+#include "CompressibleFluidSim/fluid/utils/std_allocators.h"
 
 template<typename T, typename Fields, std::size_t dimension, std::size_t alignment>
 class sov

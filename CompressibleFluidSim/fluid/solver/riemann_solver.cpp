@@ -1,4 +1,4 @@
-#include "riemann_solver.h"
+#include "CompressibleFluidSim/fluid/solver/riemann_solver.h"
 #include <iostream>
 
 riemann_solver::riemann_solver(const config& config) : left(config.left),
