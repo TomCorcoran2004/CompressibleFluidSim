@@ -2,7 +2,7 @@
 
 A high-performance **2D compressible-flow CFD solver written from scratch in modern C++**.
 
-The project solves the inviscid compressible Euler equations using a finite-volume formulation. The main focus is not only implementing the numerical methods, but exploring how CFD solvers can be structured for high performance through **data-oriented design, SIMD-friendly memory layouts, multithreading, and eventually GPU acceleration**.
+The project solves the inviscid compressible Euler equations using a finite-volume formulation. The main focus is not only implementing the numerical methods, but exploring how CFD solvers can be structured for high performance through **data-oriented design, SIMD-friendly memory layouts, multithreading, and GPU acceleration**.
 
 The solver is currently under active development.
 
@@ -43,25 +43,16 @@ The solver uses a **structure-of-arrays / structure-of-vectors layout** rather t
 
 ### Current CPU Benchmark
 
-Recent Rusanov flux microbenchmarks have reached approximately:
+Recent benchmarks have reached approximately:
 
 > **~25 million face evaluations / second on a single Ryzen 5 3600 core**
 > **~70 million face evaluations / second when fully multithreaded**
 
-This is a kernel-level performance measurement rather than complete simulation throughput, so it should not be directly compared with end-to-end performance figures from production CFD packages.
+### Current GPU Benchmark
 
-Current optimisation work includes:
+Recent benchmarks have reached approximately:
 
-- contiguous field storage
-- aligned allocation
-- reducing temporary state construction
-- eliminating unnecessary branches
-- reducing repeated mesh lookups
-- exposing loops to compiler auto-vectorisation
-- analysing failed vectorisation
-- SIMD-oriented loop restructuring
-
-Manual SIMD intrinsics and wider parallel execution are intended as later optimisation stages.
+> **~160 million face evaluations / second on my NVIDIA RTX 2060**
 
 ---
 
@@ -91,38 +82,6 @@ Numerics
 ```
 
 One of the goals is to keep numerical algorithms independent enough from storage and execution backends that alternative implementations can be introduced without redesigning the entire solver.
-
----
-
-## Design Goals
-
-This project is being developed as both a CFD solver and a performance-engineering project.
-
-The main goals are:
-
-1. **Correctness**
-
-   Establish reliable validation cases before increasing numerical complexity.
-
-2. **Data-oriented architecture**
-
-   Keep hot solver data contiguous and minimise pointer chasing and unnecessary abstraction inside numerical kernels.
-
-3. **CPU performance**
-
-   Explore cache behaviour, compiler optimisation, auto-vectorisation, explicit SIMD and multicore execution.
-
-4. **GPU acceleration**
-
-   Introduce a CUDA execution path for computationally expensive solver kernels.
-
-5. **More general meshes**
-
-   Move beyond the current structured mesh implementation toward unstructured finite-volume meshes.
-
-6. **Better numerical methods**
-
-   Add higher-quality Riemann solvers and eventually higher-order spatial reconstruction.
 
 ---
 
@@ -161,16 +120,15 @@ The main goals are:
 - [x] SIMD-oriented data layout
 - [x] Compiler vectorisation analysis
 - [ ] Manual SIMD kernels
-- [ ] Multicore CPU execution
+- [x] Multicore CPU execution
 - [ ] Improved thread scaling
-- [ ] CUDA backend
+- [x] CUDA backend
 
 ---
 
 ## Dependencies
 
 The project is currently developed on Windows using **Visual Studio 2022** and modern C++.
-It is designed to not rely on any external dependencies, to enable maximum portability. 
 The core numerical solver is written directly in C++ and does not rely on an external CFD framework.
 
 ---
